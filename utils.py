@@ -39,6 +39,6 @@ def build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_
     res['type'].append({'trucks':num_truck, 'percentage': per_truck})
     print(res) 
 
-    data['resume'] = res
+    #data['resume'] = res #to join both dict on the same json
 
-    return data
+    return data, res

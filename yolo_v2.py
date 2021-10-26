@@ -443,12 +443,13 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
     total_frames = total_frames[:-1]
 
     #make json with tags and metrics
-    report_dict = utils.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
+    report_dict, report_percentage = utils.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
     if isOutput:
         out = output_path.split(".")[0]
         utils.save_json(out+".json", report_dict)
+        utils.save_json(out+"_percentage.json", report_percentage)
     
-    print(report_dict)
+    #print(report_dict)
 
     yolo.close_session()

@@ -56,7 +56,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--stream", nargs='?', type=str, default="",
+        "--stream", nargs='?', type=str, required=False, default="",
         help = "Link with a YouTube video streaming"
     )
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     Command line positional arguments -- for video detection mode
     '''
     parser.add_argument(
-        "--input", nargs='?', type=str,required=False,default='./path2your_video',
+        "--input", nargs='?', type=str,required=False,default="",
         help = "Video input path"
     )
 
