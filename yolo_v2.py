@@ -361,7 +361,7 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
     init_time = timer()
 
     #cut number of FPS
-    target = 20 
+    target = 1
     counter = 0 
 
     #To control the number of vehicles
@@ -446,7 +446,8 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
     report_dict = utils.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
     if isOutput:
-        utils.save_json(output_path+".json", report_dict)
+        out = output_path.split(".")[0]
+        utils.save_json(out+".json", report_dict)
     
     print(report_dict)
 
