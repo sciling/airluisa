@@ -248,7 +248,7 @@ def detect_video(yolo, video_path, output_path=""):
     init_time = timer()
 
     #cut number of FPS
-    target = 20 
+    target = 15 
     counter = 0 
 
     #To control the number of vehicles
@@ -284,7 +284,7 @@ def detect_video(yolo, video_path, output_path=""):
 
                 total_time_frames.append(time_frame)
                 result = np.asarray(image)
-                #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",result)
+                cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",result)
 
                 #Cuenta acumulativa
                 num_car, num_bike, num_bus, num_truck = count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
@@ -337,10 +337,12 @@ def detect_video(yolo, video_path, output_path=""):
     total_frames = total_frames[:-1]
 
     #make json with tags and metrics
-    report_dict = utils.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
+    report_dict, report_percentage = utils.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
     if isOutput:
-        utils.save_json(output_path+".json", report_dict)
+        out = output_path.split(".")[0]
+        utils.save_json(out+".json", report_dict)
+        utils.save_json(out+"_percentage.json", report_percentage)
     
     #print(report_dict)
 

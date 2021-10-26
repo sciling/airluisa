@@ -73,7 +73,6 @@ if __name__ == '__main__':
         help = "[Optional] Video output path"
     )
 
-
     FLAGS = parser.parse_args()
 
     if FLAGS.image:
@@ -94,10 +93,10 @@ if __name__ == '__main__':
         detect_video(YOLO(**vars(FLAGS)), FLAGS.input, FLAGS.output)     
     
     elif FLAGS.stream:
-        tempFile = "temp.ts"  #files are format ts, open cv can view them
+        tempFile = "temp1.ts"  #files are format ts, open cv can view them
         videoURL = FLAGS.stream
         print(videoURL)
-        capture_stream.dl_stream(videoURL, tempFile, 800)
+        capture_stream.dl_stream(videoURL, tempFile, 500)
         detect_video(YOLO(**vars(FLAGS)), tempFile, FLAGS.output)
 
     else:
