@@ -21,7 +21,7 @@ import os
 from keras.utils import multi_gpu_model
 
 import pandas as pd
-import utils
+import utils_detec
 
 
 vehicles = ["car", "motorbike", "bus", "truck"]
@@ -125,6 +125,7 @@ class YOLO(object):
         print(image_data.shape)
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
+        print("image_data", image_data)
 
         out_boxes, out_scores, out_classes = self.sess.run(
             [self.boxes, self.scores, self.classes],
@@ -133,6 +134,7 @@ class YOLO(object):
                 self.input_image_shape: [image.size[1], image.size[0]],
                 K.learning_phase(): 0
             })
+        print(out_classes)
 
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
 
@@ -200,6 +202,37 @@ class YOLO(object):
     def close_session(self):
         self.sess.close()
 
+    def detect_vehicles_tracker(self, info, n_frame):
+
+        out_boxes = info['boxes']
+        out_classes = info['class_ids']
+        out_scores = info['scores']
+
+        print('Found {} boxes for {}'.format(info['box_nums'], 'img'))
+
+        labels = []
+        scores = []
+        id_frame = []
+        for i, c in reversed(list(enumerate(out_classes))):
+            c = int(c)
+            predicted_class = self.class_names[c]
+            box = out_boxes[i]
+            score = out_scores[i]
+
+            if score > thres and predicted_class in vehicles:
+                id_frame.append(n_frame)
+                labels.append(predicted_class)
+                scores.append(score)
+
+        df = pd.DataFrame()
+        df['id_frame'] = id_frame
+        df['labels'] = labels
+        df['scores'] = scores
+        print(df)
+
+        return df
+
+
 def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
 
     cuenta = df['labels']
@@ -214,6 +247,10 @@ def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
             num_truck += 1
     
     return num_car, num_bike, num_bus, num_truck
+
+from tracker import Tracker
+from detector import Detector
+import imutils
 
 def detect_video(yolo, video_path, output_path=""):
     import cv2
@@ -248,7 +285,7 @@ def detect_video(yolo, video_path, output_path=""):
     init_time = timer()
 
     #cut number of FPS
-    target = 15 
+    target = 1 
     counter = 0 
 
     #To control the number of vehicles
@@ -267,8 +304,7 @@ def detect_video(yolo, video_path, output_path=""):
     bus_frame = []
     truck_frame = []
 
-    #info per frame into a dataframe
-    #df_info_frame = pd.DataFrame()
+    tracker = Tracker(filter_class=['car','truck','bike','bus'])
 
     while (vid.isOpened()):
         try:
@@ -276,15 +312,21 @@ def detect_video(yolo, video_path, output_path=""):
                 return_value, frame = vid.read()
                 n_frame = n_frame + 1
                 total_frames.append(name+"_"+str(n_frame))
-                #total_frames.append(n_frame)
-                image = Image.fromarray(frame)
-                image, time_frame, df_per_frame = yolo.detect_image(image, n_frame)
 
-                #df_info_frame = pd.concat([df_info_frame, df_per_frame])
+                #image = Image.fromarray(frame)
+                #im = imutils.resize(frame, height=500)
+                im = frame
+                image2, output, info, time_frame = tracker.update(im)
+
+                df_per_frame = yolo.detect_vehicles_tracker(info, n_frame)
+                cv2.imshow('demo', image2)
+                #image = np.asarray(image)
+
+                #image, time_frame, df_per_frame = yolo.detect_image(image, n_frame)
 
                 total_time_frames.append(time_frame)
-                result = np.asarray(image)
-                cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",result)
+                #result = np.asarray(image)
+                #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",result)
 
                 #Cuenta acumulativa
                 num_car, num_bike, num_bus, num_truck = count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
@@ -305,12 +347,12 @@ def detect_video(yolo, video_path, output_path=""):
                     accum_time = accum_time - 1
                     fps = "FPS: " + str(curr_fps)
                     curr_fps = 0
-                cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=0.50, color=(255, 0, 0), thickness=2)
-                cv2.namedWindow("result", cv2.WINDOW_NORMAL)
-                cv2.imshow("result", result)
+                # cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                #             fontScale=0.50, color=(255, 0, 0), thickness=2)
+                # cv2.namedWindow("result", cv2.WINDOW_NORMAL)
+                # cv2.imshow("result", result)
                 if isOutput:
-                    out.write(result)
+                    out.write(image2)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
                 counter = 0
@@ -337,12 +379,12 @@ def detect_video(yolo, video_path, output_path=""):
     total_frames = total_frames[:-1]
 
     #make json with tags and metrics
-    report_dict, report_percentage = utils.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
+    report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
     if isOutput:
         out = output_path.split(".")[0]
-        utils.save_json(out+".json", report_dict)
-        utils.save_json(out+"_percentage.json", report_percentage)
+        utils_detec.save_json(out+".json", report_dict)
+        utils_detec.save_json(out+"_percentage.json", report_percentage)
     
     #print(report_dict)
 
@@ -384,6 +426,8 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
 
     isOutput = True if output_path != "" else False
 
+    tracker = Tracker(filter_class=['car','truck','bike','bus'])
+
     for frame in sorted(glob.glob(dir_path+"*.png")):
         print(frame)
         name = frame.split("/")[-1].split(".")
@@ -391,15 +435,19 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
 
         n_frame = n_frame + 1
         total_frames.append(name+"_"+str(n_frame))
-        image = Image.open(frame)
-        #image = Image.fromarray(image)
-        image, time_frame, df_per_frame = yolo.detect_image(image, n_frame)
-
+        # image = Image.open(frame)
+        # #image = Image.fromarray(image)
+        # image, time_frame, df_per_frame = yolo.detect_image(image, n_frame)
         #df_info_frame = pd.concat([df_info_frame, df_per_frame])
 
+        image2, output, info, time_frame = tracker.update(frame)
+
+        df_per_frame = yolo.detect_vehicles_tracker(info, n_frame)
+        cv2.imshow('demo', image2)
+
         total_time_frames.append(time_frame)
-        result = np.asarray(image)
-        cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",result)
+        #result = np.asarray(image)
+        cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
         #Cuenta acumulativa
         num_car, num_bike, num_bus, num_truck = count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
@@ -420,10 +468,6 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
             accum_time = accum_time - 1
             fps = "FPS: " + str(curr_fps)
             curr_fps = 0
-        # cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-        #             fontScale=0.50, color=(255, 0, 0), thickness=2)
-        # cv2.namedWindow("result", cv2.WINDOW_NORMAL)
-        # cv2.imshow("result", result)
 
         counter = 0
         num_car_per_frame = 0
@@ -445,12 +489,12 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
     total_frames = total_frames[:-1]
 
     #make json with tags and metrics
-    report_dict, report_percentage = utils.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
+    report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
     if isOutput:
         out = output_path.split(".")[0]
-        utils.save_json(out+".json", report_dict)
-        utils.save_json(out+"_percentage.json", report_percentage)
+        utils_detec.save_json(out+".json", report_dict)
+        utils_detec.save_json(out+"_percentage.json", report_percentage)
     
     #print(report_dict)
 
