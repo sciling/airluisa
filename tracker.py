@@ -6,7 +6,7 @@ from deep_sort.utils.parser import get_config
 from deep_sort.deep_sort import DeepSort
 import torch
 import cv2
-from utils.visualize import vis_track, vis, vis_detect_track
+from utils.visualize import vis_track, vis, vis_detect_track, vis_df
 from timeit import default_timer as timer
 
 
@@ -25,7 +25,7 @@ class Tracker():
                             use_cuda=True)
         self.filter_class = filter_class
 
-    def update(self, image):
+    def update(self, image, n_frame):
         start = timer()
         info = self.detector.detect(image, visual=False)
         end_detec = timer()
@@ -40,6 +40,7 @@ class Tracker():
             for (x1, y1, x2, y2), class_id, score  in zip(info['boxes'],info['class_ids'],info['scores']):
                 if self.filter_class and class_names[int(class_id)] not in self.filter_class:
                     continue
+
                 bbox_xywh.append([int((x1+x2)/2), int((y1+y2)/2), x2-x1, y2-y1])
                 scores.append(score)
                 classes.append(class_id)
@@ -53,8 +54,11 @@ class Tracker():
             outputs = self.deepsort.update(bbox_xywh, scores, image)
             end_track = timer()
             time_track = end_track - start
+
             #image = vis_track(image, outputs)
             image = vis_detect_track(image, outputs, scores, classes, 0.5, class_names)
+            df_image = vis_df(image, outputs, scores, classes, n_frame, 0.5, class_names)
+
 
         print(time_detec)
-        return image, outputs, data, time_detec
+        return image, outputs, data, time_detec, df_image

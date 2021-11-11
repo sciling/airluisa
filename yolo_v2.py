@@ -202,7 +202,7 @@ class YOLO(object):
     def close_session(self):
         self.sess.close()
 
-    def detect_vehicles_tracker(self, info, n_frame):
+    def init_vehicles_tracker(self, info, n_frame):
 
         out_boxes = info['boxes']
         out_classes = info['class_ids']
@@ -213,7 +213,8 @@ class YOLO(object):
         labels = []
         scores = []
         id_frame = []
-        for i, c in reversed(list(enumerate(out_classes))):
+        ids_tracks = []
+        for i, c in list(enumerate(out_classes)):
             c = int(c)
             predicted_class = self.class_names[c]
             box = out_boxes[i]
@@ -223,12 +224,14 @@ class YOLO(object):
                 id_frame.append(n_frame)
                 labels.append(predicted_class)
                 scores.append(score)
+                ids_tracks.append(None)
+
 
         df = pd.DataFrame()
         df['id_frame'] = id_frame
         df['labels'] = labels
         df['scores'] = scores
-        print(df)
+        df['id_track'] = ids_tracks
 
         return df
 
@@ -246,6 +249,24 @@ def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
         if v == "truck":
             num_truck += 1
     
+    return num_car, num_bike, num_bus, num_truck
+
+def count_vehicles_park(df, num_car, num_bike, num_bus, num_truck, num_parked):
+
+    cuenta = df['labels']
+    frame = df['id_frame']
+    id_track = df['id_track']
+
+    for i,v in enumerate(cuenta):
+        if v == "car":
+            num_car += 1
+        if v == "motorbike":
+            num_bike += 1
+        if v == "bus":
+            num_bus += 1
+        if v == "truck":
+            num_truck += 1
+
     return num_car, num_bike, num_bus, num_truck
 
 from tracker import Tracker
@@ -298,6 +319,7 @@ def detect_video(yolo, video_path, output_path=""):
     num_bike_per_frame = 0
     num_bus_per_frame = 0
     num_truck_per_frame = 0
+    num_parked_per_frame = 0
 
     cars_frame = []
     bikes_frame = []
@@ -313,26 +335,23 @@ def detect_video(yolo, video_path, output_path=""):
                 n_frame = n_frame + 1
                 total_frames.append(name+"_"+str(n_frame))
 
-                #image = Image.fromarray(frame)
-                #im = imutils.resize(frame, height=500)
-                im = frame
-                image2, output, info, time_frame = tracker.update(im)
+                image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
 
-                df_per_frame = yolo.detect_vehicles_tracker(info, n_frame)
+                if n_frame == 1:
+                    df_per_frame = yolo.init_vehicles_tracker(info, n_frame)
+
+                print(df_per_frame)
                 cv2.imshow('demo', image2)
-                #image = np.asarray(image)
-
-                #image, time_frame, df_per_frame = yolo.detect_image(image, n_frame)
 
                 total_time_frames.append(time_frame)
-                #result = np.asarray(image)
-                #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",result)
+
+                #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
                 #Cuenta acumulativa
                 num_car, num_bike, num_bus, num_truck = count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
 
                 #Por frame
-                num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
+                num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame, num_parked_per_frame = count_vehicles_park(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame, num_parked_per_frame)
                 cars_frame.append(num_car_per_frame)
                 bikes_frame.append(num_bike_per_frame)
                 bus_frame.append(num_bus_per_frame)
@@ -347,10 +366,7 @@ def detect_video(yolo, video_path, output_path=""):
                     accum_time = accum_time - 1
                     fps = "FPS: " + str(curr_fps)
                     curr_fps = 0
-                # cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                #             fontScale=0.50, color=(255, 0, 0), thickness=2)
-                # cv2.namedWindow("result", cv2.WINDOW_NORMAL)
-                # cv2.imshow("result", result)
+
                 if isOutput:
                     out.write(image2)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
