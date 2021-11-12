@@ -42,3 +42,61 @@ def build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_
     #data['resume'] = res #to join both dict on the same json
 
     return data, res
+
+def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
+
+    cuenta = df['labels']
+    for v in cuenta:
+        if v == "car":
+            num_car += 1
+        if v == "motorbike":
+            num_bike += 1
+        if v == "bus":
+            num_bus += 1
+        if v == "truck":
+            num_truck += 1
+    
+    return num_car, num_bike, num_bus, num_truck
+
+def count_vehicles_moving(df, treshold = 300):
+
+    #To control the number of vehicles NOT parked
+    num_car = 0
+    num_bike = 0
+    num_bus = 0
+    num_truck = 0
+
+    total_frames = len(df['id_frame'].unique())
+    print("TOTAL FRAMES: ", total_frames)
+
+    tracked_ids = df['id_track'].unique()
+    tracked_ids = tracked_ids[1:]
+
+    moving_vehicles = []
+    parked_vehicles = []
+    for t in tracked_ids:
+        #print(len(df[df['id_track'] == t]))
+        if len(df[df['id_track'] == t]) < treshold:
+            moving_vehicles.append(t)
+        else:
+            print("Parked vehicles ID: ", t)
+            parked_vehicles.append(t)
+
+    print("Total moving vehicles: ", len(moving_vehicles))
+    print("Total parked vehicles: ", len(parked_vehicles))
+
+    new_df = df[df['id_track'].isin(moving_vehicles)]
+
+    cuenta = new_df['labels']
+
+    for i,v in enumerate(cuenta):
+        if v == "car":
+            num_car += 1
+        if v == "motorbike":
+            num_bike += 1
+        if v == "bus":
+            num_bus += 1
+        if v == "truck":
+            num_truck += 1
+
+    return num_car, num_bike, num_bus, num_truck

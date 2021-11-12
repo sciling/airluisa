@@ -224,7 +224,7 @@ class YOLO(object):
                 id_frame.append(n_frame)
                 labels.append(predicted_class)
                 scores.append(score)
-                ids_tracks.append(None)
+                ids_tracks.append(0)
 
 
         df = pd.DataFrame()
@@ -235,39 +235,6 @@ class YOLO(object):
 
         return df
 
-
-def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
-
-    cuenta = df['labels']
-    for v in cuenta:
-        if v == "car":
-            num_car += 1
-        if v == "motorbike":
-            num_bike += 1
-        if v == "bus":
-            num_bus += 1
-        if v == "truck":
-            num_truck += 1
-    
-    return num_car, num_bike, num_bus, num_truck
-
-def count_vehicles_park(df, num_car, num_bike, num_bus, num_truck, num_parked):
-
-    cuenta = df['labels']
-    frame = df['id_frame']
-    id_track = df['id_track']
-
-    for i,v in enumerate(cuenta):
-        if v == "car":
-            num_car += 1
-        if v == "motorbike":
-            num_bike += 1
-        if v == "bus":
-            num_bus += 1
-        if v == "truck":
-            num_truck += 1
-
-    return num_car, num_bike, num_bus, num_truck
 
 from tracker import Tracker
 from detector import Detector
@@ -328,6 +295,9 @@ def detect_video(yolo, video_path, output_path=""):
 
     tracker = Tracker(filter_class=['car','truck','bike','bus'])
 
+    # info per frame into a dataframe
+    df_info_frame = pd.DataFrame()
+
     while (vid.isOpened()):
         try:
             if counter == target: 
@@ -341,6 +311,7 @@ def detect_video(yolo, video_path, output_path=""):
                     df_per_frame = yolo.init_vehicles_tracker(info, n_frame)
 
                 print(df_per_frame)
+                df_info_frame = pd.concat([df_info_frame, df_per_frame])
                 cv2.imshow('demo', image2)
 
                 total_time_frames.append(time_frame)
@@ -348,10 +319,10 @@ def detect_video(yolo, video_path, output_path=""):
                 #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
                 #Cuenta acumulativa
-                num_car, num_bike, num_bus, num_truck = count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
+                num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
 
                 #Por frame
-                num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame, num_parked_per_frame = count_vehicles_park(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame, num_parked_per_frame)
+                num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
                 cars_frame.append(num_car_per_frame)
                 bikes_frame.append(num_bike_per_frame)
                 bus_frame.append(num_bus_per_frame)
@@ -393,7 +364,9 @@ def detect_video(yolo, video_path, output_path=""):
 
     #delete the last frame because is empty
     total_frames = total_frames[:-1]
-
+    print("sin borrar nada: ", num_car, num_bike, num_bus, num_truck)
+    num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles_moving(df_info_frame)
+    print("borrando aparcados:", num_car, num_bike, num_bus, num_truck)
     #make json with tags and metrics
     report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
@@ -402,6 +375,7 @@ def detect_video(yolo, video_path, output_path=""):
         utils_detec.save_json(out+".json", report_dict)
         utils_detec.save_json(out+"_percentage.json", report_percentage)
     
+    df_info_frame.to_csv("out/df_info_frame.csv", index=False)
     #print(report_dict)
 
     yolo.close_session()
