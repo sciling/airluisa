@@ -1,4 +1,3 @@
-
 Check clickup for documentation and sprints
 
 ## Quick Start
@@ -39,4 +38,14 @@ optional arguments:
   --image            Image detection mode
 ```
 ---
+
+### Examples
+
+Example for track and detect vehicles with an video input and saving results
+
+```
+python yolo_video.py --input VideoExample.mp4  --output out/example.avi
+
+```
+
 
