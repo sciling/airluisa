@@ -58,6 +58,21 @@ def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
     
     return num_car, num_bike, num_bus, num_truck
 
+def count_df_vehicle_types(df,type, cars, bikes, buses, trucks):
+
+    for i in range(0,len(df[type])):
+        if df[type][i]['type'] == 'car':
+            cars +=1
+        if df[type][i]['type'] == 'bike':
+            bikes += 1
+        if df[type][i]['type'] == 'bus':
+            buses += 1
+        if df[type][i]['type'] == 'truck':
+            trucks += 1
+    
+    return cars, bikes, buses, trucks
+
+
 def count_vehicles_moving(df, treshold = 300):
 
     #To control the number of vehicles NOT parked
@@ -79,17 +94,14 @@ def count_vehicles_moving(df, treshold = 300):
         if len(df[df['id_track'] == t]) < treshold:
             moving_vehicles.append(t)
         else:
-            print("Parked vehicles ID: ", t)
+            # print("Parked vehicles ID: ", t)
             parked_vehicles.append(t)
-
-    print("Total moving vehicles: ", len(moving_vehicles))
-    print("Total parked vehicles: ", len(parked_vehicles))
 
     new_df = df[df['id_track'].isin(moving_vehicles)]
 
-    cuenta = new_df['labels']
+    cuenta_x_frame = new_df['labels']
 
-    for i,v in enumerate(cuenta):
+    for i,v in enumerate(cuenta_x_frame):
         if v == "car":
             num_car += 1
         if v == "motorbike":
@@ -98,5 +110,45 @@ def count_vehicles_moving(df, treshold = 300):
             num_bus += 1
         if v == "truck":
             num_truck += 1
+    
+    n = 1
+    counts = {}
+    counts['parked_vehicles'] = []
+    counts['moving_vehicles'] = []
 
-    return num_car, num_bike, num_bus, num_truck
+    for m in parked_vehicles:
+        aux = df[df['id_track'] == m]
+        cuenta = aux['labels'].value_counts()[:n].index.tolist()
+        counts['parked_vehicles'].append({'id':int(m), 'type': cuenta[0]})
+
+    for m in moving_vehicles:
+        aux = df[df['id_track'] == m]
+        cuenta = aux['labels'].value_counts()[:n].index.tolist()
+        counts['moving_vehicles'].append({'id': int(m), 'type': cuenta[0]})
+    
+    print(counts)
+    
+    cars_parked = bikes_parked = buses_parked = trucks_parked = 0
+    cars_parked, bikes_parked, buses_parked, trucks_parked = count_df_vehicle_types(counts, 'parked_vehicles', cars_parked, bikes_parked, buses_parked, trucks_parked)
+
+    cars_moving = bikes_moving = buses_moving = trucks_moving = 0
+    cars_moving, bikes_moving, buses_moving, trucks_moving = count_df_vehicle_types(counts, 'moving_vehicles', cars_moving, bikes_moving, buses_moving, trucks_moving)
+
+    
+    print("TOTAL MOVING VEHICLES: ", len(moving_vehicles))
+    print("------------------------------------------")
+    print("Total cars: ", cars_moving)
+    print("Total biks: ", bikes_moving)
+    print("Total buses: ", buses_moving)
+    print("Total trucks: ", trucks_moving)
+
+    print("TOTAL PARKED VEHICLES: ", len(parked_vehicles))
+    print("------------------------------------------")
+    print("Total cars: ", cars_parked)
+    print("Total biks: ", bikes_parked)
+    print("Total buses: ", buses_parked)
+    print("Total trucks: ", trucks_parked)
+    
+
+    return num_car, num_bike, num_bus, num_truck, counts
+

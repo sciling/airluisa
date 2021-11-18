@@ -273,7 +273,7 @@ def detect_video(yolo, video_path, output_path=""):
     init_time = timer()
 
     #cut number of FPS
-    target = 1 
+    target = 20
     counter = 0 
 
     #To control the number of vehicles
@@ -365,7 +365,7 @@ def detect_video(yolo, video_path, output_path=""):
     #delete the last frame because is empty
     total_frames = total_frames[:-1]
     print("sin borrar nada: ", num_car, num_bike, num_bus, num_truck)
-    num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles_moving(df_info_frame)
+    num_car, num_bike, num_bus, num_truck, dict_count = utils_detec.count_vehicles_moving(df_info_frame)
     print("borrando aparcados:", num_car, num_bike, num_bus, num_truck)
     #make json with tags and metrics
     report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
@@ -374,6 +374,7 @@ def detect_video(yolo, video_path, output_path=""):
         out = output_path.split(".")[0]
         utils_detec.save_json(out+".json", report_dict)
         utils_detec.save_json(out+"_percentage.json", report_percentage)
+        utils_detec.save_json(out+"_id_tracks_type.json", dict_count)
     
     df_info_frame.to_csv("out/df_info_frame.csv", index=False)
     #print(report_dict)
@@ -430,20 +431,24 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
         # image, time_frame, df_per_frame = yolo.detect_image(image, n_frame)
         #df_info_frame = pd.concat([df_info_frame, df_per_frame])
 
-        image2, output, info, time_frame = tracker.update(frame)
+        image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
 
-        df_per_frame = yolo.detect_vehicles_tracker(info, n_frame)
+        if n_frame == 1:
+            df_per_frame = yolo.init_vehicles_tracker(info, n_frame)
+
+        print(df_per_frame)
+        df_info_frame = pd.concat([df_info_frame, df_per_frame])
         cv2.imshow('demo', image2)
 
         total_time_frames.append(time_frame)
-        #result = np.asarray(image)
-        cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
+
+        #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
         #Cuenta acumulativa
-        num_car, num_bike, num_bus, num_truck = count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
+        num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
 
         #Por frame
-        num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
+        num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
         cars_frame.append(num_car_per_frame)
         bikes_frame.append(num_bike_per_frame)
         bus_frame.append(num_bus_per_frame)
@@ -459,6 +464,10 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
             fps = "FPS: " + str(curr_fps)
             curr_fps = 0
 
+        if isOutput:
+            out.write(image2)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         counter = 0
         num_car_per_frame = 0
         num_bike_per_frame = 0
@@ -469,7 +478,7 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
     total_time = now_time - init_time
     res = datetime.timedelta(seconds=total_time)
     print("Total time: ", total_time, res)
-  
+
     sum = 0
     for i in total_time_frames:
         sum = sum + i
@@ -477,7 +486,9 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
 
     #delete the last frame because is empty
     total_frames = total_frames[:-1]
-
+    print("sin borrar nada: ", num_car, num_bike, num_bus, num_truck)
+    num_car, num_bike, num_bus, num_truck, dict_count = utils_detec.count_vehicles_moving(df_info_frame)
+    print("borrando aparcados:", num_car, num_bike, num_bus, num_truck)
     #make json with tags and metrics
     report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
@@ -485,7 +496,9 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
         out = output_path.split(".")[0]
         utils_detec.save_json(out+".json", report_dict)
         utils_detec.save_json(out+"_percentage.json", report_percentage)
+        utils_detec.save_json(out+"_id_tracks_type.json", dict_count)
     
+    df_info_frame.to_csv("out/df_info_frame.csv", index=False)
     #print(report_dict)
 
     yolo.close_session()
