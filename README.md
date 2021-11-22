@@ -48,4 +48,33 @@ python yolo_video.py --input VideoExample.mp4  --output out/example.avi
 
 ```
 
+Expected results, jsons with info (vehicles per frame, tracking vehicles info, total percentage of vehicles per frame) and a txt with this kind of information:
+
+```
+TOTAL MOVING VEHICLES:  6
+------------------------------------------
+Total cars:  6
+Total motorbikes:  0
+Total buses:  0
+Total trucks:  0
+TOTAL PARKED VEHICLES:  2
+------------------------------------------
+Total cars:  2
+Total motorbikes:  0
+Total buses:  0
+Total trucks:  0
+
+PERCENTAGE VEHICLES PER FRAME:
+{'total_vehicles': 768, 'type': 
+[{'cars': 749, 'percentage': 0.98}, 
+{'bikes': 0, 'percentage': 0.0}, 
+{'buses': 0, 'percentage': 0.0}, 
+{'trucks': 19, 'percentage': 0.02}]}
+
+```
+
+
+
+
+
 
