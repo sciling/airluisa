@@ -6,7 +6,7 @@ def load_json(data):
     return data_json
 
 def save_json(path_json,data):
-    with open(path_json, 'w') as outfile:
+    with open(path_json, "w") as outfile:
         json.dump(data, outfile)
     return
 
@@ -14,12 +14,12 @@ def build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_
                     num_car, num_bike, num_bus, num_truck):
 
     data = {}
-    data['results'] = []
+    data["results"] = []
     for i in range(len(total_frames)):
-        #data['results'][i] = {}
-        data['results'].append({'id':total_frames[i]})
-        data['results'][i]['time_frame'] = total_time_frames[i]
-        data['results'][i]['objects'] = {"car": cars_frame[i] ,"truck": truck_frame[i], "bus": bus_frame[i], "bike": bikes_frame[i], "parked": 0}
+        #data["results"][i] = {}
+        data["results"].append({"id":total_frames[i]})
+        data["results"][i]["time_frame"] = total_time_frames[i]
+        data["results"][i]["objects"] = {"car": cars_frame[i] ,"truck": truck_frame[i], "bus": bus_frame[i], "bike": bikes_frame[i], "parked": 0}
 
 
     total_vehicles = num_car + num_bike + num_bus + num_truck
@@ -31,21 +31,21 @@ def build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_
     per_truck = round(num_truck/total_vehicles, 2)
 
     res = {}
-    res['total_vehicules'] = total_vehicles
-    res['type'] = []
-    res['type'].append({'cars':num_car, 'percentage': per_car})
-    res['type'].append({'bikes':num_bike, 'percentage': per_bike})
-    res['type'].append({'buses':num_bus, 'percentage': per_bus})
-    res['type'].append({'trucks':num_truck, 'percentage': per_truck})
+    res["total_vehicles"] = total_vehicles
+    res["type"] = []
+    res["type"].append({"cars":num_car, "percentage": per_car})
+    res["type"].append({"bikes":num_bike, "percentage": per_bike})
+    res["type"].append({"buses":num_bus, "percentage": per_bus})
+    res["type"].append({"trucks":num_truck, "percentage": per_truck})
     print(res) 
 
-    #data['resume'] = res #to join both dict on the same json
+    #data["resume"] = res #to join both dict on the same json
 
     return data, res
 
 def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
 
-    cuenta = df['labels']
+    cuenta = df["labels"]
     for v in cuenta:
         if v == "car":
             num_car += 1
@@ -61,19 +61,19 @@ def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
 def count_df_vehicle_types(df,type, cars, bikes, buses, trucks):
 
     for i in range(0,len(df[type])):
-        if df[type][i]['type'] == 'car':
+        if df[type][i]["type"] == "car":
             cars +=1
-        if df[type][i]['type'] == 'bike':
+        if df[type][i]["type"] == "bike":
             bikes += 1
-        if df[type][i]['type'] == 'bus':
+        if df[type][i]["type"] == "bus":
             buses += 1
-        if df[type][i]['type'] == 'truck':
+        if df[type][i]["type"] == "truck":
             trucks += 1
     
     return cars, bikes, buses, trucks
 
 
-def count_vehicles_moving(df, treshold = 300):
+def count_vehicles_moving(df, output_path, treshold = 300):
 
     #To control the number of vehicles NOT parked
     num_car = 0
@@ -81,25 +81,25 @@ def count_vehicles_moving(df, treshold = 300):
     num_bus = 0
     num_truck = 0
 
-    total_frames = len(df['id_frame'].unique())
+    total_frames = len(df["id_frame"].unique())
     print("TOTAL FRAMES: ", total_frames)
 
-    tracked_ids = df['id_track'].unique()
+    tracked_ids = df["id_track"].unique()
     tracked_ids = tracked_ids[1:]
 
     moving_vehicles = []
     parked_vehicles = []
     for t in tracked_ids:
-        #print(len(df[df['id_track'] == t]))
-        if len(df[df['id_track'] == t]) < treshold:
+        #print(len(df[df["id_track"] == t]))
+        if len(df[df["id_track"] == t]) < treshold:
             moving_vehicles.append(t)
         else:
             # print("Parked vehicles ID: ", t)
             parked_vehicles.append(t)
 
-    new_df = df[df['id_track'].isin(moving_vehicles)]
+    new_df = df[df["id_track"].isin(moving_vehicles)]
 
-    cuenta_x_frame = new_df['labels']
+    cuenta_x_frame = new_df["labels"]
 
     for i,v in enumerate(cuenta_x_frame):
         if v == "car":
@@ -113,42 +113,63 @@ def count_vehicles_moving(df, treshold = 300):
     
     n = 1
     counts = {}
-    counts['parked_vehicles'] = []
-    counts['moving_vehicles'] = []
+    counts["parked_vehicles"] = []
+    counts["moving_vehicles"] = []
 
     for m in parked_vehicles:
-        aux = df[df['id_track'] == m]
-        cuenta = aux['labels'].value_counts()[:n].index.tolist()
-        counts['parked_vehicles'].append({'id':int(m), 'type': cuenta[0]})
+        aux = df[df["id_track"] == m]
+        cuenta = aux["labels"].value_counts()[:n].index.tolist()
+        counts["parked_vehicles"].append({"id":int(m), "type": cuenta[0]})
 
     for m in moving_vehicles:
-        aux = df[df['id_track'] == m]
-        cuenta = aux['labels'].value_counts()[:n].index.tolist()
-        counts['moving_vehicles'].append({'id': int(m), 'type': cuenta[0]})
+        aux = df[df["id_track"] == m]
+        cuenta = aux["labels"].value_counts()[:n].index.tolist()
+        counts["moving_vehicles"].append({"id": int(m), "type": cuenta[0]})
     
-    print(counts)
     
     cars_parked = bikes_parked = buses_parked = trucks_parked = 0
-    cars_parked, bikes_parked, buses_parked, trucks_parked = count_df_vehicle_types(counts, 'parked_vehicles', cars_parked, bikes_parked, buses_parked, trucks_parked)
+    cars_parked, bikes_parked, buses_parked, trucks_parked = count_df_vehicle_types(counts, "parked_vehicles", cars_parked, bikes_parked, buses_parked, trucks_parked)
 
     cars_moving = bikes_moving = buses_moving = trucks_moving = 0
-    cars_moving, bikes_moving, buses_moving, trucks_moving = count_df_vehicle_types(counts, 'moving_vehicles', cars_moving, bikes_moving, buses_moving, trucks_moving)
+    cars_moving, bikes_moving, buses_moving, trucks_moving = count_df_vehicle_types(counts, "moving_vehicles", cars_moving, bikes_moving, buses_moving, trucks_moving)
 
+    counts["total_moving_vehicles"] = {"num": len(moving_vehicles), "cars": cars_moving, "motorbikes": bikes_moving
+    , "buses": buses_moving, "trucks": trucks_moving}
+
+    counts["total_parked_vehicles"] = {"num": len(parked_vehicles), "cars": cars_parked, "motorbikes": bikes_parked
+    , "buses": buses_parked, "trucks": trucks_parked}
     
+    print(counts)
+
+    out = output_path.split(".")[0]
+    with open(out+"_resumen.txt", "w") as f:
+        f.write("TOTAL MOVING VEHICLES: "+ str(len(moving_vehicles))+"\n")
+        f.write("------------------------------------------\n")
+        f.write("Total cars: " + str(cars_moving)+"\n")
+        f.write("Total motorbikes: " + str(bikes_moving)+"\n")
+        f.write("Total buses: " + str(buses_moving)+"\n")
+        f.write("Total trucks: " + str(trucks_moving)+"\n")
+        f.write("\n")
+        f.write("TOTAL PARKED VEHICLES: "+ str(len(parked_vehicles))+"\n")
+        f.write("------------------------------------------\n")
+        f.write("Total cars: "+ str(cars_parked)+"\n")
+        f.write("Total motorbikes: "+ str(bikes_parked)+"\n")
+        f.write("Total buses: "+ str(buses_parked)+"\n")
+        f.write("Total trucks: "+ str(trucks_parked)+"\n")
+
     print("TOTAL MOVING VEHICLES: ", len(moving_vehicles))
     print("------------------------------------------")
     print("Total cars: ", cars_moving)
-    print("Total biks: ", bikes_moving)
+    print("Total motorbikes: ", bikes_moving)
     print("Total buses: ", buses_moving)
     print("Total trucks: ", trucks_moving)
 
     print("TOTAL PARKED VEHICLES: ", len(parked_vehicles))
     print("------------------------------------------")
     print("Total cars: ", cars_parked)
-    print("Total biks: ", bikes_parked)
+    print("Total motorbikes: ", bikes_parked)
     print("Total buses: ", buses_parked)
     print("Total trucks: ", trucks_parked)
-    
 
     return num_car, num_bike, num_bus, num_truck, counts
 

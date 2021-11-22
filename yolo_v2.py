@@ -273,7 +273,7 @@ def detect_video(yolo, video_path, output_path=""):
     init_time = timer()
 
     #cut number of FPS
-    target = 20
+    target = 5
     counter = 0 
 
     #To control the number of vehicles
@@ -365,7 +365,7 @@ def detect_video(yolo, video_path, output_path=""):
     #delete the last frame because is empty
     total_frames = total_frames[:-1]
     print("sin borrar nada: ", num_car, num_bike, num_bus, num_truck)
-    num_car, num_bike, num_bus, num_truck, dict_count = utils_detec.count_vehicles_moving(df_info_frame)
+    num_car, num_bike, num_bus, num_truck, dict_count = utils_detec.count_vehicles_moving(df_info_frame, output_path)
     print("borrando aparcados:", num_car, num_bike, num_bus, num_truck)
     #make json with tags and metrics
     report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
@@ -464,8 +464,6 @@ def detect_dir_frames(yolo, dir_path, output_path=""):
             fps = "FPS: " + str(curr_fps)
             curr_fps = 0
 
-        if isOutput:
-            out.write(image2)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         counter = 0
