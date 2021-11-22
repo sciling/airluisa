@@ -48,7 +48,7 @@ python yolo_video.py --input VideoExample.mp4  --output out/example.avi
 
 ```
 
-Expected results, jsons with info (vehicles per frame, traking vehicles info, total percentage of vehicles per frame) and a txt with this kind of information:
+Expected results, jsons with info (vehicles per frame, tracking vehicles info, total percentage of vehicles per frame) and a txt with this kind of information:
 
 ```
 TOTAL MOVING VEHICLES:  6
