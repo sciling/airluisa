@@ -93,10 +93,10 @@ if __name__ == '__main__':
         detect_video(YOLO(**vars(FLAGS)), FLAGS.input, FLAGS.output)     
     
     elif FLAGS.stream:
-        tempFile = "temp1.ts"  #files are format ts, open cv can view them
+        tempFile = "vidCalle.ts"  #files are format ts, open cv can view them
         videoURL = FLAGS.stream
         print(videoURL)
-        capture_stream.dl_stream(videoURL, tempFile, 500)
+        capture_stream.dl_stream(videoURL, tempFile, 2000)
         detect_video(YOLO(**vars(FLAGS)), tempFile, FLAGS.output)
 
     else:

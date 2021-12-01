@@ -8,6 +8,8 @@ import torch
 import cv2
 from utils.visualize import vis_track, vis, vis_detect_track, vis_df
 from timeit import default_timer as timer
+import numpy as np
+import pandas as pd
 
 
 
@@ -15,6 +17,7 @@ class_names = COCO_CLASSES
 
 class Tracker():
     def __init__(self, filter_class=None, model='yolox-s', ckpt='weights/yolox_s.pth.tar', ):
+        print(ckpt)
         self.detector = Detector(model, ckpt)
         cfg = get_config()
         cfg.merge_from_file("deep_sort/configs/deep_sort.yaml")
@@ -32,11 +35,20 @@ class Tracker():
         time_detec = end_detec - start
         outputs = []
         data = {}
+
+        if info == {}: #Añadido para cuando no detecta NADA
+            df_image = pd.DataFrame()
+            df_image['id_frame'] = []
+            df_image['labels'] = []
+            df_image['scores'] = []
+            df_image['id_track'] = []
+            return image, outputs, data, time_detec, df_image
+
         if info['box_nums']>0:
             bbox_xywh = []
             scores = []
             classes = []
-            #bbox_xywh = torch.zeros((info['box_nums'], 4))
+            # bbox_xywh = torch.zeros((info['box_nums'], 4))
             for (x1, y1, x2, y2), class_id, score  in zip(info['boxes'],info['class_ids'],info['scores']):
                 if self.filter_class and class_names[int(class_id)] not in self.filter_class:
                     continue
@@ -49,16 +61,22 @@ class Tracker():
             data['class_ids'] = classes
             data['scores'] = scores
             data['box_nums'] = len(data['boxes'])
+            print("scores:", scores, classes, bbox_xywh)
 
-            bbox_xywh = torch.Tensor(bbox_xywh)
-            outputs = self.deepsort.update(bbox_xywh, scores, image)
+            if bbox_xywh == []: #Añadido para caundo no Trackea NADA
+                outputs = []
+            else:    
+                bbox_xywh = torch.Tensor(bbox_xywh)
+                outputs = self.deepsort.update(bbox_xywh, scores, image)
+
+            print(len(outputs),len(bbox_xywh),len(scores), len(classes))
             end_track = timer()
             time_track = end_track - start
 
             #image = vis_track(image, outputs)
             image = vis_detect_track(image, outputs, scores, classes, 0.5, class_names)
             df_image = vis_df(image, outputs, scores, classes, n_frame, 0.5, class_names)
-
+            print(df_image)
 
         print(time_detec)
         return image, outputs, data, time_detec, df_image

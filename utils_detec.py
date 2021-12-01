@@ -63,7 +63,7 @@ def count_df_vehicle_types(df,type, cars, bikes, buses, trucks):
     for i in range(0,len(df[type])):
         if df[type][i]["type"] == "car":
             cars +=1
-        if df[type][i]["type"] == "bike":
+        if df[type][i]["type"] == "motorbike":
             bikes += 1
         if df[type][i]["type"] == "bus":
             buses += 1

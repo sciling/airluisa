@@ -273,7 +273,7 @@ def detect_video(yolo, video_path, output_path=""):
     init_time = timer()
 
     #cut number of FPS
-    target = 5
+    target = 10
     counter = 0 
 
     #To control the number of vehicles
@@ -293,64 +293,65 @@ def detect_video(yolo, video_path, output_path=""):
     bus_frame = []
     truck_frame = []
 
-    tracker = Tracker(filter_class=['car','truck','bike','bus'])
+    #changed model yolox_s to yolox_darknet
+    tracker = Tracker(filter_class=['car','truck','motorbike','bus'],model="yolov3", 
+    ckpt="weights/yolox_darknet53.47.3.pth.tar")
 
     # info per frame into a dataframe
     df_info_frame = pd.DataFrame()
 
     while (vid.isOpened()):
         try:
-            if counter == target: 
-                return_value, frame = vid.read()
-                n_frame = n_frame + 1
-                total_frames.append(name+"_"+str(n_frame))
+        # if counter == target: 
+            return_value, frame = vid.read()
+            n_frame = n_frame + 1
+            total_frames.append(name+"_"+str(n_frame))
+            image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
 
-                image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
+            if n_frame == 1:
+                df_per_frame = yolo.init_vehicles_tracker(info, n_frame)
 
-                if n_frame == 1:
-                    df_per_frame = yolo.init_vehicles_tracker(info, n_frame)
+            print(df_per_frame)
+            df_info_frame = pd.concat([df_info_frame, df_per_frame])
+            cv2.imshow('demo', image2)
 
-                print(df_per_frame)
-                df_info_frame = pd.concat([df_info_frame, df_per_frame])
-                cv2.imshow('demo', image2)
+            total_time_frames.append(time_frame)
 
-                total_time_frames.append(time_frame)
+            #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
-                #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
+            #Cuenta acumulativa
+            num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
 
-                #Cuenta acumulativa
-                num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
+            #Por frame
+            num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
+            cars_frame.append(num_car_per_frame)
+            bikes_frame.append(num_bike_per_frame)
+            bus_frame.append(num_bus_per_frame)
+            truck_frame.append(num_truck_per_frame)
 
-                #Por frame
-                num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
-                cars_frame.append(num_car_per_frame)
-                bikes_frame.append(num_bike_per_frame)
-                bus_frame.append(num_bus_per_frame)
-                truck_frame.append(num_truck_per_frame)
+            curr_time = timer()
+            exec_time = curr_time - prev_time
+            prev_time = curr_time
+            accum_time = accum_time + exec_time
+            curr_fps = curr_fps + 1
+            if accum_time > 1:
+                accum_time = accum_time - 1
+                fps = "FPS: " + str(curr_fps)
+                curr_fps = 0
 
-                curr_time = timer()
-                exec_time = curr_time - prev_time
-                prev_time = curr_time
-                accum_time = accum_time + exec_time
-                curr_fps = curr_fps + 1
-                if accum_time > 1:
-                    accum_time = accum_time - 1
-                    fps = "FPS: " + str(curr_fps)
-                    curr_fps = 0
+            if isOutput:
+                out.write(image2)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+            counter = 0
+            num_car_per_frame = 0
+            num_bike_per_frame = 0
+            num_bus_per_frame = 0
+            num_truck_per_frame = 0
 
-                if isOutput:
-                    out.write(image2)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-                counter = 0
-                num_car_per_frame = 0
-                num_bike_per_frame = 0
-                num_bus_per_frame = 0
-                num_truck_per_frame = 0
-
-            else:
-                return_value = vid.grab()
-                counter +=1
+        # else:
+        #     return_value = vid.grab()
+        #     counter +=1
         except:
             now_time = timer()
             total_time = now_time - init_time

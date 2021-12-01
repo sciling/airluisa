@@ -49,8 +49,13 @@ class Detector():
             outputs = self.model(img)
             outputs = postprocess(
                 outputs, self.exp.num_classes, self.exp.test_conf, self.exp.nmsthre)#[0].cpu().numpy()
-            # print(outputs)
-            outputs = outputs[0].cpu().numpy()
+                #outputs, self.exp.num_classes, conf_thre=0.01, nms_thre=self.exp.nmsthre)
+
+            if outputs == [None]:
+                info = {}
+                return info 
+            else:
+                outputs = outputs[0].cpu().numpy()
 
         info['boxes'] = outputs[:, 0:4]/ratio
         info['scores'] = outputs[:, 4] * outputs[:, 5]
