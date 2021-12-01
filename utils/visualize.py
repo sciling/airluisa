@@ -37,75 +37,88 @@ def vis(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
 
 def vis_detect_track(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
 
-    
-    for i in range(len(boxes)):
-        box = boxes[i]
-        cls_id = int(cls_ids[i])
-        score = scores[i]
-        if score < conf:
-            continue
-        x0 = int(box[0])
-        y0 = int(box[1])
-        x1 = int(box[2])
-        y1 = int(box[3])
+    print(len(boxes), cls_ids, len(cls_ids),"lens")
+    if len(boxes) > len(cls_ids):
+        return img
 
-        id = box[4]
-        text_id = '%d'%(id)
+    else:
+        for i in range(len(boxes)):
+            print(i)
+            box = boxes[i]
+            cls_id = int(cls_ids[i])
+            score = scores[i]
+            if score < conf:
+                continue
+            x0 = int(box[0])
+            y0 = int(box[1])
+            x1 = int(box[2])
+            y1 = int(box[3])
 
-        color = (_COLORS[cls_id] * 250).astype(np.uint8).tolist()
-        text = '{}:{:.1f}%   ID:{}'.format(class_names[cls_id], score * 100, text_id)
-        txt_color = (0, 0, 0) if np.mean(_COLORS[cls_id]) > 0.5 else (255, 255, 255)
-        font = cv2.FONT_HERSHEY_DUPLEX
+            id = box[4]
+            text_id = '%d'%(id)
 
-        txt_size = cv2.getTextSize(text, font, 0.4, 1)[0]
-        cv2.rectangle(img, (x0, y0), (x1, y1), color, 2)
+            color = (_COLORS[cls_id] * 250).astype(np.uint8).tolist()
+            text = '{}:{:.1f}%   ID:{}'.format(class_names[cls_id], score * 100, text_id)
+            txt_color = (0, 0, 0) if np.mean(_COLORS[cls_id]) > 0.5 else (255, 255, 255)
+            font = cv2.FONT_HERSHEY_DUPLEX
 
-        txt_bk_color = (_COLORS[cls_id] * 255 * 0.7).astype(np.uint8).tolist()
-        cv2.rectangle(
-            img,
-            (x0, y0 + 1),
-            (x0 + txt_size[0] + 1, y0 + int(1.5*txt_size[1])),
-            txt_bk_color,
-            -1
-        )
-        cv2.putText(img, text, (x0, y0 + txt_size[1]), font, 0.4, txt_color, thickness=1)
+            txt_size = cv2.getTextSize(text, font, 0.4, 1)[0]
+            cv2.rectangle(img, (x0, y0), (x1, y1), color, 2)
 
-    return img
+            txt_bk_color = (_COLORS[cls_id] * 255 * 0.7).astype(np.uint8).tolist()
+            cv2.rectangle(
+                img,
+                (x0, y0 + 1),
+                (x0 + txt_size[0] + 1, y0 + int(1.5*txt_size[1])),
+                txt_bk_color,
+                -1
+            )
+            cv2.putText(img, text, (x0, y0 + txt_size[1]), font, 0.4, txt_color, thickness=1)
+
+        return img
 
 def vis_df(img, boxes, scores, cls_ids, n_frame, conf=0.5, class_names=None):
 
+    df = pd.DataFrame()
     labels = []
     scoress = []
     id_frame = []
     boxess = []
     ids_track = []
 
-    for i in range(len(boxes)):
-        box = boxes[i]
-        cls_id = int(cls_ids[i])
-        score = scores[i]
-        if score < conf:
-            continue
-        x0 = int(box[0])
-        y0 = int(box[1])
-        x1 = int(box[2])
-        y1 = int(box[3])
+    if len(boxes) > len(cls_ids):
+        df['id_frame'] = id_frame
+        df['labels'] = labels
+        df['scores'] = scoress
+        df['id_track'] = ids_track
+        return df
 
-        id = box[4]
+    else:
+        for i in range(len(boxes)):
+            box = boxes[i]
+            cls_id = int(cls_ids[i])
+            score = scores[i]
+            if score < conf:
+                continue
+            x0 = int(box[0])
+            y0 = int(box[1])
+            x1 = int(box[2])
+            y1 = int(box[3])
 
-        labels.append(class_names[cls_id])
-        scoress.append(score)
-        id_frame.append(n_frame)
-        boxess.append([x0,y0,x1,y1])
-        ids_track.append(id)
+            id = box[4]
 
-    df = pd.DataFrame()
-    df['id_frame'] = id_frame
-    df['labels'] = labels
-    df['scores'] = scoress
-    df['id_track'] = ids_track
-       
-    return df
+            labels.append(class_names[cls_id])
+            scoress.append(score)
+            id_frame.append(n_frame)
+            boxess.append([x0,y0,x1,y1])
+            ids_track.append(id)
+
+        df['id_frame'] = id_frame
+        df['labels'] = labels
+        df['scores'] = scoress
+        df['id_track'] = ids_track
+        
+        return df
 
 
 def vis_track(img, boxes):
