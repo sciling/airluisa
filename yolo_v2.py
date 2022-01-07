@@ -8,6 +8,8 @@ import os
 from timeit import default_timer as timer
 import datetime
 from cv2 import threshold
+import cv2
+import pandas as pd
 
 import numpy as np
 from keras import backend as K
@@ -18,11 +20,13 @@ from PIL import Image, ImageFont, ImageDraw
 from yolo3.model import yolo_eval, yolo_body, tiny_yolo_body
 from yolo3.utils import letterbox_image
 import os
-from keras.utils import multi_gpu_model
 
-import pandas as pd
+
 import utils_detec
+import psutil
+import monitor_functions  
 
+import GPUtil as GPU
 
 vehicles = ["car", "motorbike", "bus", "truck"]
 thres = 0.5
@@ -240,13 +244,32 @@ from tracker import Tracker
 from detector import Detector
 import imutils
 
+def get_cpu_usage_pct():
+    """
+    Obtains the system's average CPU load as measured over a period of 500 milliseconds.
+    :returns: System CPU load as a percentage.
+    :rtype: float
+    """
+    return psutil.cpu_percent(interval=0.5)
+
+def get_gpu_usage():
+    GPUs = GPU.getGPUs()
+
+    for gpu in GPUs:
+        print(gpu.id, gpu.load*100, gpu.memoryUtil*100)
+        deviceIds = gpu.id
+        gpuUtil = gpu.load*100
+        memUtil = gpu.memoryUtil*100
+    
+    GPU.showUtilization()
+    
+    return deviceIds, gpuUtil, memUtil
+
 def detect_video(yolo, video_path, output_path=""):
-    import cv2
-    import pandas as pd
 
     name = video_path.split("/")[-1].split(".")
     name = name[0]
-
+    print(video_path)
     vid = cv2.VideoCapture(video_path)
 
     print(vid.isOpened())
@@ -257,7 +280,19 @@ def detect_video(yolo, video_path, output_path=""):
     video_size      = (int(vid.get(cv2.CAP_PROP_FRAME_WIDTH)),
                         int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT)))
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    print(video_fps, video_size)
+
+    frame_count = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = frame_count/video_fps
+
+    print('fps = ' + str(video_fps))
+    print('number of frames = ' + str(frame_count))
+    print('duration (S) = ' + str(duration))
+    res2 = datetime.timedelta(seconds=duration)
+    print(res2)
+    
+    # minutes = int(duration/60)
+    # seconds = duration%60
+    # print('duration (M:S) = ' + str(minutes) + ':' + str(seconds))
 
     isOutput = True if output_path != "" else False
     if isOutput:
@@ -293,75 +328,100 @@ def detect_video(yolo, video_path, output_path=""):
     bus_frame = []
     truck_frame = []
 
+    cpu_usage = []
+    cpu_freq = []
+    ram_usage = []
+
+    #deviceIds, gpuUtil, memUtil
+    gpu_utils = []
+    gpu_memutils = []
+
     #changed model yolox_s to yolox_darknet
-    tracker = Tracker(filter_class=['car','truck','motorbike','bus'],model="yolov3", 
-    ckpt="weights/yolox_darknet53.47.3.pth.tar")
+    tracker = Tracker(filter_class=['car','truck','motorbike','bus'])
+    #,model="yolov3", 
+    #ckpt="weights/yolox_darknet53.47.3.pth.tar")
 
     # info per frame into a dataframe
     df_info_frame = pd.DataFrame()
-
+    
+    start = timer()
     while (vid.isOpened()):
-        try:
+        # try:
         # if counter == target: 
-            return_value, frame = vid.read()
-            n_frame = n_frame + 1
-            total_frames.append(name+"_"+str(n_frame))
-            image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
+        return_value, frame = vid.read()
+        n_frame = n_frame + 1
+        total_frames.append(name+"_"+str(n_frame))
+        image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
 
-            if n_frame == 1:
-                df_per_frame = yolo.init_vehicles_tracker(info, n_frame)
+        if n_frame == 1:
+            df_per_frame = yolo.init_vehicles_tracker(info, n_frame)
 
-            print(df_per_frame)
-            df_info_frame = pd.concat([df_info_frame, df_per_frame])
-            cv2.imshow('demo', image2)
+        print(df_per_frame)
+        df_info_frame = pd.concat([df_info_frame, df_per_frame])
+        cv2.imshow('demo', image2)
 
-            total_time_frames.append(time_frame)
+        total_time_frames.append(time_frame)
 
-            #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
+        #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
-            #Cuenta acumulativa
-            num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
+        #Cuenta acumulativa
+        num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(df_per_frame, num_car, num_bike, num_bus, num_truck)
 
-            #Por frame
-            num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
-            cars_frame.append(num_car_per_frame)
-            bikes_frame.append(num_bike_per_frame)
-            bus_frame.append(num_bus_per_frame)
-            truck_frame.append(num_truck_per_frame)
+        #Por frame
+        num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
+        cars_frame.append(num_car_per_frame)
+        bikes_frame.append(num_bike_per_frame)
+        bus_frame.append(num_bus_per_frame)
+        truck_frame.append(num_truck_per_frame)
 
-            curr_time = timer()
-            exec_time = curr_time - prev_time
-            prev_time = curr_time
-            accum_time = accum_time + exec_time
-            curr_fps = curr_fps + 1
-            if accum_time > 1:
-                accum_time = accum_time - 1
-                fps = "FPS: " + str(curr_fps)
-                curr_fps = 0
+        # Monitor functions for CPU and RAM
+        cpu_u, cpu_f, ram_u = monitor_functions.get_results()
+        cpu_usage.append(cpu_u)
+        cpu_freq.append(cpu_f)
+        ram_usage.append(ram_u)
 
-            if isOutput:
-                out.write(image2)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            counter = 0
-            num_car_per_frame = 0
-            num_bike_per_frame = 0
-            num_bus_per_frame = 0
-            num_truck_per_frame = 0
+        # Monitor GPU
+        deviceIds, gpuUtil, memUtil = get_gpu_usage()
+        gpu_utils.append(gpuUtil)
+        gpu_memutils.append(memUtil)
+
+        curr_time = timer()
+        exec_time = curr_time - prev_time
+        prev_time = curr_time
+        accum_time = accum_time + exec_time
+        curr_fps = curr_fps + 1
+        if accum_time > 1:
+            accum_time = accum_time - 1
+            fps = "FPS: " + str(curr_fps)
+            curr_fps = 0
+
+        if isOutput:
+            out.write(image2)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        counter = 0
+        num_car_per_frame = 0
+        num_bike_per_frame = 0
+        num_bus_per_frame = 0
+        num_truck_per_frame = 0
 
         # else:
         #     return_value = vid.grab()
         #     counter +=1
-        except:
-            now_time = timer()
-            total_time = now_time - init_time
-            res = datetime.timedelta(seconds=total_time)
-            print("Total time: ", total_time, res)
-            break
+        # except:
+        #     now_time = timer()
+        #     total_time = now_time - init_time
+        #     res = datetime.timedelta(seconds=total_time)
+        #     print("Total time: ", total_time, res)
+        #     break
     sum = 0
     for i in total_time_frames:
         sum = sum + i
     print(sum, datetime.timedelta(seconds=sum))
+
+    end_track = timer()
+    time_track = end_track - start
+    total_time_process  =  datetime.timedelta(seconds=time_track)
 
     #delete the last frame because is empty
     total_frames = total_frames[:-1]
@@ -371,11 +431,41 @@ def detect_video(yolo, video_path, output_path=""):
     #make json with tags and metrics
     report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                 num_car, num_bike, num_bus, num_truck)
+
+    avg_cpu_usage, avg_cpu_freq, avg_ram_usage = utils_detec.build_monitor_cpu_results(cpu_usage, cpu_freq, ram_usage)
+    print("Average use of CPU: ", avg_cpu_usage, " %")
+    print("Average frequency use of CPU: ", avg_cpu_freq, " MHz")
+    print("Average memory RAM: ", avg_ram_usage, " MB")
+    print('RAM total is {} MB'.format(int(monitor_functions.get_ram_total() / 1024 / 1024)))
+
+    avg_gpu_util, avg_gpu_mem = utils_detec.build_monitor_gpu_results(gpu_utils, gpu_memutils)
+    print("Average use of GPU util: ", avg_gpu_util, " %")
+    print("Average use of GPU mem util: ", avg_gpu_mem, " %")
+
     if isOutput:
         out = output_path.split(".")[0]
         utils_detec.save_json(out+".json", report_dict)
         utils_detec.save_json(out+"_percentage.json", report_percentage)
         utils_detec.save_json(out+"_id_tracks_type.json", dict_count)
+
+        res2 = datetime.timedelta(seconds=duration)
+
+        with open(out+"_resumen.txt", "a") as f:
+            f.write("------------------------------------------\n")
+            f.write('FPS = ' + str(video_fps) +"\n")
+            f.write("Number of frames = " + str(frame_count) +"\n")
+            f.write("Duration (S) = "+ str(duration) + ", " + str(res2)+ "\n")
+            f.write("TOTAL DETECTION TIME: "+ str(datetime.timedelta(seconds=sum)) +"\n")
+            f.write("TOTAL PROCES TIME:: "+ str(total_time_process) +"\n")
+            f.write("------------------------------------------\n")
+            f.write("Average use of CPU: "+ str(avg_cpu_usage) + " %\n")
+            f.write("Average frequency use of CPU: " + str(avg_cpu_freq) + " MHz\n")
+            f.write("Average memory RAM: "+ str(avg_ram_usage) + " MB\n")
+            f.write("RAM total is "+ str(int(monitor_functions.get_ram_total() / 1024 / 1024)) +" MB")
+            f.write("------------------------------------------\n")
+            f.write("Average use of GPU util "+ str(avg_gpu_util) + " %\n")
+            f.write("Average use of GPU mem util: "+ str(avg_gpu_mem) + " %\n")
+
     
     df_info_frame.to_csv("out/df_info_frame.csv", index=False)
     #print(report_dict)

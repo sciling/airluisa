@@ -10,6 +10,23 @@ def save_json(path_json,data):
         json.dump(data, outfile)
     return
 
+
+def build_monitor_cpu_results(cpu_u, cpu_f, ram_u):
+
+    cpu_usage = sum(cpu_u)/len(cpu_u)
+    cpu_freq = sum(cpu_f)/len(cpu_f)
+    ram_usage = sum(ram_u)/len(ram_u)
+
+    return cpu_usage, cpu_freq, ram_usage
+
+def build_monitor_gpu_results(gpuUtil, memUtil):
+
+    gpu_util = sum(gpuUtil)/len(gpuUtil)
+    mem_util = sum(memUtil)/len(memUtil)
+
+    return gpu_util, mem_util
+
+
 def build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, 
                     num_car, num_bike, num_bus, num_truck):
 
@@ -37,7 +54,7 @@ def build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_
     res["type"].append({"bikes":num_bike, "percentage": per_bike})
     res["type"].append({"buses":num_bus, "percentage": per_bus})
     res["type"].append({"trucks":num_truck, "percentage": per_truck})
-    print(res) 
+    # print(res) 
 
     #data["resume"] = res #to join both dict on the same json
 
@@ -139,7 +156,7 @@ def count_vehicles_moving(df, output_path, treshold = 300):
     counts["total_parked_vehicles"] = {"num": len(parked_vehicles), "cars": cars_parked, "motorbikes": bikes_parked
     , "buses": buses_parked, "trucks": trucks_parked}
     
-    print(counts)
+    # print(counts)
 
     out = output_path.split(".")[0]
     with open(out+"_resumen.txt", "w") as f:

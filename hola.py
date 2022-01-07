@@ -8,7 +8,6 @@ import torch
 import cv2
 from utils.visualize import vis_track, vis, vis_detect_track, vis_df
 from timeit import default_timer as timer
-import pandas as pd
 
 class_names = COCO_CLASSES
 
@@ -30,16 +29,6 @@ class Tracker():
         outputs = []
         data = {}
 
-        # if info == {}: #Añadido para cuando no detecta NADA
-        #     end_detec = timer()
-        #     time_detec = end_detec - start
-        #     df_image = pd.DataFrame()
-        #     df_image['id_frame'] = []
-        #     df_image['labels'] = []
-        #     df_image['scores'] = []
-        #     df_image['id_track'] = []
-            # return image, outputs, data, time_detec, df_image
-
         if info['box_nums']>0:
             bbox_xywh = []
             scores = []
@@ -52,34 +41,23 @@ class Tracker():
                 scores.append(score)
                 classes.append(class_id)
 
-            if bbox_xywh == []:
-                outputs = []
-            else:
-                bbox_xywh = torch.Tensor(bbox_xywh)
-                # print("creo tensor")
-                outputs = self.deepsort.update(bbox_xywh, scores, image)
-                # print("update deepsort")
-            #image = vis_track(image, outputs)
+                print(bbox_xywh)
+                if bbox_xywh == []: #Añadido para caundo no Trackea NADA
+                    outputs = []
+                else: 
+                    bbox_xywh = torch.Tensor(bbox_xywh)
+                    outputs = self.deepsort.update(bbox_xywh, scores, image)
 
-            #image = vis_detect_track(image, outputs, scores, classes, 0.5, class_names)
-            image = 0 # no queremos devolver imagen pintada
+            #image = vis_track(image, outputs)
+            image = vis_detect_track(image, outputs, scores, classes, 0.5, class_names)
             df_image = vis_df(image, outputs, scores, classes, n_frame, 0.5, class_names)
 
-        
             data['boxes'] = bbox_xywh
             data['class_ids'] = classes
             data['scores'] = scores
             data['box_nums'] = len(data['boxes'])
-        
-        else:
-            df_image = pd.DataFrame()
-            df_image['id_frame'] = []
-            df_image['labels'] = []
-            df_image['scores'] = []
-            df_image['id_track'] = []
 
-        end_track = timer()
-        time_track = end_track - start
-        # print("devuelvo datos")
+            end_track = timer()
+            time_track = end_track - start
 
         return image, outputs, data, time_track, df_image
