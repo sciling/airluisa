@@ -1,0 +1,12 @@
+__pycache__
+venv
+*.mp4
+*.jpg
+*.png
+weights
+*tar
+test.py
+data
+result.json
+test2.py
+zzz.py
