@@ -1,6 +1,6 @@
 import sys
 import argparse
-from yolo_v3 import detect_video, track_cap #, detect_dir_frames
+from yolo_v3 import detect_video #, detect_dir_frames
 from PIL import Image
 import capture_stream
 
@@ -9,7 +9,7 @@ FLAGS = None
 
 if __name__ == '__main__':
     # class YOLO defines the default value, so suppress any default here
-    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+    parser = argparse.ArgumentParser()
     '''
     Command line options
     '''
@@ -32,13 +32,20 @@ if __name__ == '__main__':
         help = "[Optional] Video output path"
     )
 
+    parser.add_argument(
+        "--use-cuda", action='store_true',
+        help = "[Optional] Use cuda or not"
+    )
+
+
     FLAGS = parser.parse_args()
 
     
     if FLAGS.input:
         print(FLAGS.input, "INPUT")
         print(FLAGS.output, "OUTPUT")
-        detect_video(FLAGS.input, FLAGS.output) 
+        print(f"Use cuda flag: {FLAGS.use_cuda} ")
+        detect_video(video_path=FLAGS.input, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda) 
         #track_cap(FLAGS.input)    
     
     elif FLAGS.stream:
@@ -46,7 +53,7 @@ if __name__ == '__main__':
         videoURL = FLAGS.stream
         print(videoURL)
         capture_stream.dl_stream(videoURL, tempFile, 2000)
-        detect_video(tempFile, FLAGS.output)
+        detect_video(video_path=tempFile, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda)
     
     # elif FLAGS.dir:
     #     print(FLAGS.dir)

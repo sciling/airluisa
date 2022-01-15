@@ -13,15 +13,15 @@ import pandas as pd
 class_names = COCO_CLASSES
 
 class Tracker():
-    def __init__(self, filter_class=None, model='yolox-s', ckpt='weights/yolox_s.pth.tar', ):
-        self.detector = Detector(model, ckpt)
+    def __init__(self, filter_class=None, model='yolox-s', ckpt='weights/yolox_s.pth.tar', use_cuda=True):
+        self.detector = Detector(model, ckpt, use_cude=use_cuda)
         cfg = get_config()
         cfg.merge_from_file("deep_sort/configs/deep_sort.yaml")
         self.deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
                             max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
                             nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP, max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
                             max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
-                            use_cuda=True)
+                            use_cuda=use_cuda)
         self.filter_class = filter_class
 
     def update(self, image, n_frame):

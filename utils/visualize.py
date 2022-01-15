@@ -9,7 +9,6 @@ def vis_detect_track(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
 
     else:
         for i in range(len(boxes)):
-            print(i)
             box = boxes[i]
             cls_id = int(cls_ids[i])
             score = scores[i]
@@ -85,6 +84,7 @@ def vis_df(img, boxes, scores, cls_ids, n_frame, conf=0.5, class_names=None):
         df['id_track'] = ids_track
         
         return df
+
 
 
 def vis(img, boxes, scores, cls_ids, conf=0.5, class_names=None):

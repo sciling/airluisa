@@ -1,6 +1,6 @@
 from tracker import Tracker
-from detector import Detector
-import imutils, argparse, cv2
+# from detector import Detector
+import imutils, cv2
 import pandas as pd
 import os
 from glob import glob
@@ -9,8 +9,8 @@ import datetime
 
 
 import utils_detec
-import monitor_functions
-from monitor_gpu import Monitor
+# import monitor_functions
+# from monitor_gpu import Monitor
 from monitor_cpu import Monitor_CPU
 
 vehicles = ["car", "motorbike", "bus", "truck"]
@@ -18,9 +18,9 @@ thres = 0.5
 
 def init_vehicles_tracker(info, n_frame):
 
-        out_boxes = info['boxes']
-        out_classes = info['class_ids']
-        out_scores = info['scores']
+        # out_boxes = info['boxes']
+        # out_classes = info['class_ids']
+        # out_scores = info['scores']
 
         print('Found {} boxes for {}'.format(info['box_nums'], 'img'))
 
@@ -37,33 +37,33 @@ def init_vehicles_tracker(info, n_frame):
 
         return df
 
-def track_cap_from_demo(file):
-    cap = cv2.VideoCapture(file)
-    print(cap.isOpened())
-    tracker = Tracker()
-    a = 0
-    while True:
+# def track_cap_from_demo(file):
+#     cap = cv2.VideoCapture(file)
+#     print(cap.isOpened())
+#     tracker = Tracker()
+#     a = 0
+#     while True:
         
-        _, im = cap.read()
-        if im is None:
-            break
-        a += 1
-        if a%10!=0:
-            continue
-        im = imutils.resize(im, height=500)
-        image,_ = tracker.update(im)
+#         _, im = cap.read()
+#         if im is None:
+#             break
+#         a += 1
+#         if a%10!=0:
+#             continue
+#         im = imutils.resize(im, height=500)
+#         image,_ = tracker.update(im)
        
  
-        cv2.imshow('demo', image)
-        cv2.waitKey(1)
-        if cv2.getWindowProperty('demo', cv2.WND_PROP_AUTOSIZE) < 1:
-            break
+#         cv2.imshow('demo', image)
+#         cv2.waitKey(1)
+#         if cv2.getWindowProperty('demo', cv2.WND_PROP_AUTOSIZE) < 1:
+#             break
 
-    cap.release()
-    cv2.destroyAllWindows()
+#     cap.release()
+#     cv2.destroyAllWindows()
 
 
-def detect_video(video_path, output_path=""):
+def detect_video(video_path, output_path="", use_cuda=True):
     name = video_path.split("/")[-1].split(".")
     name = name[0]
     print(video_path)
@@ -76,7 +76,7 @@ def detect_video(video_path, output_path=""):
     video_fps       = vid.get(cv2.CAP_PROP_FPS)
     video_size      = (int(vid.get(cv2.CAP_PROP_FRAME_WIDTH)),
                         int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    # fourcc = cv2.VideoWriter_fourcc(*'DIVX')
 
     frame_count = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
     duration = frame_count/video_fps
@@ -119,7 +119,7 @@ def detect_video(video_path, output_path=""):
     truck_frame = []
 
 
-    tracker = Tracker(filter_class=['car','truck','motorbike','bus'])
+    tracker = Tracker(filter_class=['car','truck','motorbike','bus'], use_cuda=use_cuda)
 
     # To change model yolox_s to yolox_darknet
     # tracker = Tracker(filter_class=['car','truck','motorbike','bus'],model="yolov3",
