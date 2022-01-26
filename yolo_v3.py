@@ -119,10 +119,10 @@ def detect_video(video_path, output_path="", use_cuda=True):
     truck_frame = []
 
 
-    tracker = Tracker(filter_class=['car','truck','motorbike','bus'], use_cuda=use_cuda)
+    tracker = Tracker(filter_class=['car','truck','motorcycle','bus'], use_cuda=use_cuda)
 
     # To change model yolox_s to yolox_darknet
-    # tracker = Tracker(filter_class=['car','truck','motorbike','bus'],model="yolov3",
+    # tracker = Tracker(filter_class=['car','truck','motorcycle','bus'],model="yolov3",
     # ckpt="weights/yolox_darknet53.47.3.pth.tar")
 
     # info per frame into a dataframe
