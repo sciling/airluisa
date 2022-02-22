@@ -13,7 +13,7 @@ import utils_detec
 # from monitor_gpu import Monitor
 from monitor_cpu import Monitor_CPU
 
-vehicles = ["car", "motorbike", "bus", "truck"]
+vehicles = ["car", "motorcycle", "bus", "truck"]
 thres = 0.5
 
 def init_vehicles_tracker(info, n_frame):

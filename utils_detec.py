@@ -66,7 +66,7 @@ def count_vehicles(df, num_car, num_bike, num_bus, num_truck):
     for v in cuenta:
         if v == "car":
             num_car += 1
-        if v == "motorbike":
+        if v == "motorcycle":
             num_bike += 1
         if v == "bus":
             num_bus += 1
@@ -80,7 +80,7 @@ def count_df_vehicle_types(df,type, cars, bikes, buses, trucks):
     for i in range(0,len(df[type])):
         if df[type][i]["type"] == "car":
             cars +=1
-        if df[type][i]["type"] == "motorbike":
+        if df[type][i]["type"] == "motorcycle":
             bikes += 1
         if df[type][i]["type"] == "bus":
             buses += 1
@@ -121,7 +121,7 @@ def count_vehicles_moving(df, output_path, treshold = 100):
     for i,v in enumerate(cuenta_x_frame):
         if v == "car":
             num_car += 1
-        if v == "motorbike":
+        if v == "motorcycle":
             num_bike += 1
         if v == "bus":
             num_bus += 1
@@ -150,10 +150,10 @@ def count_vehicles_moving(df, output_path, treshold = 100):
     cars_moving = bikes_moving = buses_moving = trucks_moving = 0
     cars_moving, bikes_moving, buses_moving, trucks_moving = count_df_vehicle_types(counts, "moving_vehicles", cars_moving, bikes_moving, buses_moving, trucks_moving)
 
-    counts["total_moving_vehicles"] = {"num": len(moving_vehicles), "cars": cars_moving, "motorbikes": bikes_moving
+    counts["total_moving_vehicles"] = {"num": len(moving_vehicles), "cars": cars_moving, "motorcycles": bikes_moving
     , "buses": buses_moving, "trucks": trucks_moving}
 
-    counts["total_parked_vehicles"] = {"num": len(parked_vehicles), "cars": cars_parked, "motorbikes": bikes_parked
+    counts["total_parked_vehicles"] = {"num": len(parked_vehicles), "cars": cars_parked, "motorcycles": bikes_parked
     , "buses": buses_parked, "trucks": trucks_parked}
     
     # print(counts)
@@ -163,28 +163,28 @@ def count_vehicles_moving(df, output_path, treshold = 100):
         f.write("TOTAL MOVING VEHICLES: "+ str(len(moving_vehicles))+"\n")
         f.write("------------------------------------------\n")
         f.write("Total cars: " + str(cars_moving)+"\n")
-        f.write("Total motorbikes: " + str(bikes_moving)+"\n")
+        f.write("Total motorcycles: " + str(bikes_moving)+"\n")
         f.write("Total buses: " + str(buses_moving)+"\n")
         f.write("Total trucks: " + str(trucks_moving)+"\n")
         f.write("\n")
         f.write("TOTAL PARKED VEHICLES: "+ str(len(parked_vehicles))+"\n")
         f.write("------------------------------------------\n")
         f.write("Total cars: "+ str(cars_parked)+"\n")
-        f.write("Total motorbikes: "+ str(bikes_parked)+"\n")
+        f.write("Total motorcycles: "+ str(bikes_parked)+"\n")
         f.write("Total buses: "+ str(buses_parked)+"\n")
         f.write("Total trucks: "+ str(trucks_parked)+"\n")
 
     print("TOTAL MOVING VEHICLES: ", len(moving_vehicles))
     print("------------------------------------------")
     print("Total cars: ", cars_moving)
-    print("Total motorbikes: ", bikes_moving)
+    print("Total motorcycles: ", bikes_moving)
     print("Total buses: ", buses_moving)
     print("Total trucks: ", trucks_moving)
 
     print("TOTAL PARKED VEHICLES: ", len(parked_vehicles))
     print("------------------------------------------")
     print("Total cars: ", cars_parked)
-    print("Total motorbikes: ", bikes_parked)
+    print("Total motorcycles: ", bikes_parked)
     print("Total buses: ", buses_parked)
     print("Total trucks: ", trucks_parked)
 

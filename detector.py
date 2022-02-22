@@ -13,10 +13,8 @@ from YOLOX.yolox.utils import postprocess
 from utils.visualize import vis
 
 
-
 COCO_MEAN = (0.485, 0.456, 0.406)
 COCO_STD = (0.229, 0.224, 0.225)
-
 
 
 
