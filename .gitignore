@@ -3,9 +3,7 @@ venv
 *.mp4
 *.jpg
 *.png
-*tar
 test.py
-data
 result.json
 test2.py
 zzz.py
