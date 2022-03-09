@@ -3,6 +3,7 @@ import argparse
 from yolo_v3 import detect_video #, detect_dir_frames
 from PIL import Image
 #import capture_stream
+import os
 
 
 FLAGS = None
@@ -48,6 +49,11 @@ if __name__ == '__main__':
     
     print(FLAGS.input, "INPUT")
     print(FLAGS.output, "OUTPUT")
+    #check if output path exists
+    output_path = os.path.dirname(FLAGS.output)
+    if not os.path.exists(output_path):
+        #create it if not
+        os.makedirs(output_path)
     print(FLAGS.sampling_fps, "SAMPLING FPS")
     print(f"Use cuda flag: {FLAGS.use_cuda} ")
     detect_video(video_path=FLAGS.input, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda, smapling_fps=FLAGS.sampling_fps, streaming=FLAGS.stream) 
