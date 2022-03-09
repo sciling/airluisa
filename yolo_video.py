@@ -51,15 +51,15 @@ if __name__ == '__main__':
         print(FLAGS.output, "OUTPUT")
         print(FLAGS.sampling_fps, "OUTPUT")
         print(f"Use cuda flag: {FLAGS.use_cuda} ")
-        detect_video(video_path=FLAGS.input, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda, smapling_fps=FLAGS.sampling_fps) 
+        detect_video(video_path=FLAGS.input, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda, smapling_fps=FLAGS.sampling_fps, steaming=False) 
         #track_cap(FLAGS.input)    
     
     elif FLAGS.stream:
         tempFile = "vidCalle.ts"  #files are format ts, open cv can view them
         videoURL = FLAGS.stream
         print(videoURL)
-        capture_stream.dl_stream(videoURL, tempFile, 2000)
-        detect_video(video_path=tempFile, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda)
+        #capture_stream.dl_stream(videoURL, tempFile, 2000)
+        detect_video(video_path=videoURL, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda, smapling_fps=FLAGS.sampling_fps, streaming=True)
     
     # elif FLAGS.dir:
     #     print(FLAGS.dir)

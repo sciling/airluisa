@@ -13,9 +13,11 @@ from monitor_cpu import Monitor_CPU
 from monitor_gpu import Monitor
 from tracker import Tracker
 
+#import pafy
+import streamlink
+
 vehicles = ["car", "motorcycle", "bus", "truck"]
 thres = 0.5
-
 
 def init_vehicles_tracker(info, n_frame):
 
@@ -64,31 +66,50 @@ def init_vehicles_tracker(info, n_frame):
 #     cv2.destroyAllWindows()
 
 
-def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3):
-    name = video_path.split("/")[-1].split(".")
-    name = name[0]
-    print(video_path)
-    vid = cv2.VideoCapture(video_path)
+def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, streaming=False):
+    if not streaming:
+        name = video_path.split("/")[-1].split(".")
+        name = name[0]
+        print(video_path)
+        vid = cv2.VideoCapture(video_path)
+    else:
+        name = video_path
+        #pafyVid = pafy.new(video_path)
+        #bestVid = pafyVid.getbest(preftype="webm")
+        streams = streamlink.streams(video_path)
+        vid = cv2.VideoCapture(streams["best"].url)
 
-    print(vid.isOpened())
+    
+
+    
+    #print(vid.isOpened())
     if not vid.isOpened():
         raise IOError("Couldn't open webcam or video")
+
     video_FourCC = int(vid.get(cv2.CAP_PROP_FOURCC))
     video_fps = vid.get(cv2.CAP_PROP_FPS)
     video_size = (int(vid.get(cv2.CAP_PROP_FRAME_WIDTH)),
                   int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT)))
     num_frames_to_sample = round(video_fps / smapling_fps)
+    # print(type(video_fps))
+    # print(type(smapling_fps))
+    # print(video_fps / smapling_fps)
+    # print(round(video_fps / smapling_fps))
+    # print(num_frames_to_sample)
+    #exit(0)
     # fourcc = cv2.VideoWriter_fourcc(*'DIVX')
 
     frame_count = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration = frame_count/video_fps
+    if not streaming:
+        duration = frame_count/video_fps
 
-    print('FPS = ' + str(video_fps))
-    print('Sampling FPS = ' + str(smapling_fps))
-    print('Frames to Sample = ' + str(num_frames_to_sample))
-    print('Number of frames = ' + str(frame_count))
-    print('Video duration (S) = ' + str(duration))
-    res2 = datetime.timedelta(seconds=duration)
+    print(f"FPS: {video_fps}")
+    print(f"Sampling FPS: {smapling_fps}")
+    print(f"Number of frames to sample: {num_frames_to_sample}")
+    if not streaming:
+        print(f"Number of frames: {frame_count}")
+        print(f"Video duration (s): {duration}")
+        res2 = datetime.timedelta(seconds=duration)
 
     isOutput = True if output_path != "" else False
     if isOutput:
@@ -136,7 +157,10 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3):
     if use_cuda:
         monitor_gpu = Monitor(30, output_path)  # For GPU
     monitor_cpu = Monitor_CPU(30, output_path)  # For CPU
-    while (vid.isOpened()):
+    while True:
+        if (not streaming) and (not vid.isOpened()):
+            break
+        
         try:
             _, frame = vid.read()
             n_frame = n_frame + 1
@@ -149,7 +173,8 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3):
             image2, output, info, time_frame, df_per_frame = tracker.update(
                 frame, n_frame)
 
-            # print(n_frame)
+            print(n_frame)
+            #print(video_fps)
 
             if not is_vehicle_tracker_initialized:
                 df_per_frame = init_vehicles_tracker(info, n_frame)
@@ -159,7 +184,7 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3):
 
             total_time_frames.append(time_frame)
 
-            # cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
+            #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
             # Cuenta acumulativa
             num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(
