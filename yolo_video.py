@@ -2,7 +2,7 @@ import sys
 import argparse
 from yolo_v3 import detect_video #, detect_dir_frames
 from PIL import Image
-import capture_stream
+#import capture_stream
 
 
 FLAGS = None
@@ -19,12 +19,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--stream", nargs='?', type=str, required=False, default="",
-        help = "Link with a YouTube video streaming"
+        "--stream", action='store_true',
+        help = "[Optional] Process a live streaming or not"
     )
     parser.add_argument(
         "--input", nargs='?', type=str,required=False,default="",
-        help = "Video input path"
+        help = "Video input path or url"
     )
 
     parser.add_argument(
@@ -46,24 +46,11 @@ if __name__ == '__main__':
     FLAGS = parser.parse_args()
 
     
-    if FLAGS.input:
-        print(FLAGS.input, "INPUT")
-        print(FLAGS.output, "OUTPUT")
-        print(FLAGS.sampling_fps, "OUTPUT")
-        print(f"Use cuda flag: {FLAGS.use_cuda} ")
-        detect_video(video_path=FLAGS.input, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda, smapling_fps=FLAGS.sampling_fps, steaming=False) 
-        #track_cap(FLAGS.input)    
-    
-    elif FLAGS.stream:
-        tempFile = "vidCalle.ts"  #files are format ts, open cv can view them
-        videoURL = FLAGS.stream
-        print(videoURL)
-        #capture_stream.dl_stream(videoURL, tempFile, 2000)
-        detect_video(video_path=videoURL, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda, smapling_fps=FLAGS.sampling_fps, streaming=True)
-    
-    # elif FLAGS.dir:
-    #     print(FLAGS.dir)
-    #     detect_dir_frames(YOLO(**vars(FLAGS)), FLAGS.dir, FLAGS.output)
+    print(FLAGS.input, "INPUT")
+    print(FLAGS.output, "OUTPUT")
+    print(FLAGS.sampling_fps, "SAMPLING FPS")
+    print(f"Use cuda flag: {FLAGS.use_cuda} ")
+    detect_video(video_path=FLAGS.input, output_path=FLAGS.output, use_cuda=FLAGS.use_cuda, smapling_fps=FLAGS.sampling_fps, streaming=FLAGS.stream) 
 
-    else:
+    if not FLAGS.input:
         print("Must specify at least video_input_path.  See usage with --help.")
