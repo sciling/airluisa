@@ -42,10 +42,16 @@ def build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_
     total_vehicles = num_car + num_bike + num_bus + num_truck
 
     print(total_vehicles)
-    per_car = round(num_car/total_vehicles, 2)
-    per_bike = round(num_bike/total_vehicles, 2)
-    per_bus = round(num_bus/total_vehicles, 2)
-    per_truck = round(num_truck/total_vehicles, 2)
+    if total_vehicles > 0:
+        per_car = round(num_car/total_vehicles, 2)
+        per_bike = round(num_bike/total_vehicles, 2)
+        per_bus = round(num_bus/total_vehicles, 2)
+        per_truck = round(num_truck/total_vehicles, 2)
+    else:
+        per_car = 0
+        per_bike = 0
+        per_bus = 0
+        per_truck = 0
 
     res = {}
     res["total_vehicles"] = total_vehicles
