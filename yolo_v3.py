@@ -65,6 +65,46 @@ def init_vehicles_tracker(info, n_frame):
 #     cap.release()
 #     cv2.destroyAllWindows()
 
+def get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput, duration, video_fps, frame_count, df_info_frame, start, hour):
+    end_track = timer()
+    time_track = end_track - start
+    total_time_process = datetime.timedelta(seconds=time_track)
+    print(total_time_process)
+
+    num_car, num_bike, num_bus, num_truck, dict_count = utils_detec.count_vehicles_moving(
+        df_info_frame, output_path)
+        
+    sum = 0
+    for i in total_time_frames:
+        #print("test" + str(i))
+        sum = sum + i
+    # Make json with tags and metrics
+    report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame,
+                                                               num_car, num_bike, num_bus, num_truck)
+
+    if isOutput:
+       
+        out = output_path.split(".")[0]
+        utils_detec.save_json(out+ "_" + str(hour) + ".json", report_dict)
+        utils_detec.save_json(out+"_percentage_"+ str(hour) +".json", report_percentage)
+        utils_detec.save_json(out+"_id_tracks_type_" + str(hour) + ".json", dict_count)
+
+        res2 = datetime.timedelta(seconds=duration)
+
+        with open(out+"_resumen_" + str(hour) + ".txt", "a") as f:
+            f.write("------------------------------------------\n")
+            f.write('FPS = ' + str(video_fps) + "\n")
+            
+            if duration > 0:
+                f.write("Number of frames = " + str(frame_count) + "\n")
+                f.write("Video duration = " + str(duration) +
+                        "s, " + str(res2) + "\n")
+                f.write("TOTAL DETECTION TIME: " +
+                        str(datetime.timedelta(seconds=sum)) + "\n")
+            f.write("TOTAL PROCES TIME:: " + str(total_time_process) + "\n")
+
+    df_info_frame.to_csv("out/df_info_frame.csv", index=False)
+    print("SAVED")
 
 def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, streaming=False):
     if not streaming:
@@ -102,6 +142,8 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
     frame_count = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
     if not streaming:
         duration = frame_count/video_fps
+    else:
+        duration = -1
 
     print(f"FPS: {video_fps}")
     print(f"Sampling FPS: {smapling_fps}")
@@ -122,6 +164,7 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
     total_frames = []
     total_time_frames = []
     init_time = timer()
+    hour = 0
 
     # To control the number of vehicles
     num_car = 0
@@ -152,6 +195,7 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
     df_info_frame = pd.DataFrame()
 
     start = timer()
+    last_report = start
 
     monitor_gpu = None
     if use_cuda:
@@ -167,6 +211,7 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
 
             if n_frame % num_frames_to_sample != 0:
                 continue
+
 
             total_frames.append(name+"_"+str(n_frame))
             frame = imutils.resize(frame, height=500)
@@ -214,49 +259,33 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
         #     return_value = vid.grab()
         #     counter +=1
 
+            # if (n_frame % 300) == 0:
+            #     hour += 1
+            #     get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
+            #         duration, video_fps, frame_count, df_info_frame, start, hour)
+            
+            actual_time = timer()
+            if (actual_time - last_report) >= 3600:
+                last_report = timer()
+                hour += 1
+                get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
+                    duration, video_fps, frame_count, df_info_frame, start, hour)
         except:
+            #print("Test")
             now_time = timer()
             total_time = now_time - init_time
             res = datetime.timedelta(seconds=total_time)
             print("Total time: ", total_time, res)
             break
 
-    sum = 0
+    
     if monitor_gpu is not None:
         monitor_gpu.stop()
     monitor_cpu.stop()
-    for i in total_time_frames:
-        sum = sum + i
-
-    end_track = timer()
-    time_track = end_track - start
-    total_time_process = datetime.timedelta(seconds=time_track)
-    print(total_time_process)
+    
 
     # Delete the last frame because is empty
     total_frames = total_frames[:-1]
-    num_car, num_bike, num_bus, num_truck, dict_count = utils_detec.count_vehicles_moving(
-        df_info_frame, output_path)
-    # Make json with tags and metrics
-    report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame,
-                                                               num_car, num_bike, num_bus, num_truck)
-
-    if isOutput:
-        out = output_path.split(".")[0]
-        utils_detec.save_json(out+".json", report_dict)
-        utils_detec.save_json(out+"_percentage.json", report_percentage)
-        utils_detec.save_json(out+"_id_tracks_type.json", dict_count)
-
-        res2 = datetime.timedelta(seconds=duration)
-
-        with open(out+"_resumen.txt", "a") as f:
-            f.write("------------------------------------------\n")
-            f.write('FPS = ' + str(video_fps) + "\n")
-            f.write("Number of frames = " + str(frame_count) + "\n")
-            f.write("Video duration = " + str(duration) +
-                    "s, " + str(res2) + "\n")
-            f.write("TOTAL DETECTION TIME: " +
-                    str(datetime.timedelta(seconds=sum)) + "\n")
-            f.write("TOTAL PROCES TIME:: " + str(total_time_process) + "\n")
-
-    df_info_frame.to_csv("out/df_info_frame.csv", index=False)
+    
+    get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
+    duration, video_fps, frame_count, df_info_frame, start, hour)
