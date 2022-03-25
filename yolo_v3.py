@@ -65,7 +65,7 @@ def init_vehicles_tracker(info, n_frame):
 #     cap.release()
 #     cv2.destroyAllWindows()
 
-def get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput, duration, video_fps, frame_count, df_info_frame, start, hour):
+def get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, output_path, isOutput, duration, video_fps, frame_count, df_info_frame, start, hour):
     end_track = timer()
     time_track = end_track - start
     total_time_process = datetime.timedelta(seconds=time_track)
@@ -74,10 +74,7 @@ def get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_fra
     num_car, num_bike, num_bus, num_truck, dict_count = utils_detec.count_vehicles_moving(
         df_info_frame, output_path)
         
-    sum = 0
-    for i in total_time_frames:
-        #print("test" + str(i))
-        sum = sum + i
+    sum_time_frames = sum(total_time_frames)
     # Make json with tags and metrics
     report_dict, report_percentage = utils_detec.build_results(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame,
                                                                num_car, num_bike, num_bus, num_truck)
@@ -100,7 +97,7 @@ def get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_fra
                 f.write("Video duration = " + str(duration) +
                         "s, " + str(res2) + "\n")
                 f.write("TOTAL DETECTION TIME: " +
-                        str(datetime.timedelta(seconds=sum)) + "\n")
+                        str(datetime.timedelta(seconds=sum_time_frames)) + "\n")
             f.write("TOTAL PROCES TIME:: " + str(total_time_process) + "\n")
 
     df_info_frame.to_csv("out/df_info_frame.csv", index=False)
@@ -205,80 +202,71 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
         if (not streaming) and (not vid.isOpened()):
             break
         
-        try:
-            _, frame = vid.read()
-            n_frame = n_frame + 1
+        _, frame = vid.read()
+        n_frame = n_frame + 1
 
-            if n_frame % num_frames_to_sample != 0:
-                continue
+        if n_frame % num_frames_to_sample != 0:
+            continue
 
 
-            total_frames.append(name+"_"+str(n_frame))
-            frame = imutils.resize(frame, height=500)
-            image2, output, info, time_frame, df_per_frame = tracker.update(
-                frame, n_frame)
+        total_frames.append(name+"_"+str(n_frame))
+        frame = imutils.resize(frame, height=500)
+        image2, output, info, time_frame, df_per_frame = tracker.update(
+            frame, n_frame)
 
-            print(n_frame)
-            #print(video_fps)
+        print(n_frame)
+        #print(video_fps)
 
-            if not is_vehicle_tracker_initialized:
-                df_per_frame = init_vehicles_tracker(info, n_frame)
-                is_vehicle_tracker_initialized = True
+        if not is_vehicle_tracker_initialized:
+            df_per_frame = init_vehicles_tracker(info, n_frame)
+            is_vehicle_tracker_initialized = True
 
-            df_info_frame = pd.concat([df_info_frame, df_per_frame])
+        df_info_frame = pd.concat([df_info_frame, df_per_frame])
 
-            total_time_frames.append(time_frame)
+        total_time_frames.append(time_frame)
 
-            #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
+        #cv2.imwrite(output_path+"frame"+str(n_frame)+".jpeg",image2)
 
-            # Cuenta acumulativa
-            num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(
-                df_per_frame, num_car, num_bike, num_bus, num_truck)
+        # Cuenta acumulativa
+        num_car, num_bike, num_bus, num_truck = utils_detec.count_vehicles(
+            df_per_frame, num_car, num_bike, num_bus, num_truck)
 
-            # Por frame
-            num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(
-                df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
-            cars_frame.append(num_car_per_frame)
-            bikes_frame.append(num_bike_per_frame)
-            bus_frame.append(num_bus_per_frame)
-            truck_frame.append(num_truck_per_frame)
+        # Por frame
+        num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame = utils_detec.count_vehicles(
+            df_per_frame, num_car_per_frame, num_bike_per_frame, num_bus_per_frame, num_truck_per_frame)
+        cars_frame.append(num_car_per_frame)
+        bikes_frame.append(num_bike_per_frame)
+        bus_frame.append(num_bus_per_frame)
+        truck_frame.append(num_truck_per_frame)
 
-            # TO SAVE VIDEO
-            # if isOutput:
-            #     out.write(image2)
+        # TO SAVE VIDEO
+        # if isOutput:
+        #     out.write(image2)
 
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break
-            # counter = 0
-            num_car_per_frame = 0
-            num_bike_per_frame = 0
-            num_bus_per_frame = 0
-            num_truck_per_frame = 0
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
+        # counter = 0
+        num_car_per_frame = 0
+        num_bike_per_frame = 0
+        num_bus_per_frame = 0
+        num_truck_per_frame = 0
 
-        # else:
-        #     return_value = vid.grab()
-        #     counter +=1
+    # else:
+    #     return_value = vid.grab()
+    #     counter +=1
 
-            # if (n_frame % 300) == 0:
-            #     hour += 1
-            #     get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
-            #         duration, video_fps, frame_count, df_info_frame, start, hour)
-            
-            actual_time = timer()
-            if (actual_time - last_report) >= 3600:
-                last_report = timer()
-                hour += 1
-                get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
-                    duration, video_fps, frame_count, df_info_frame, start, hour)
-        except:
-            #print("Test")
-            now_time = timer()
-            total_time = now_time - init_time
-            res = datetime.timedelta(seconds=total_time)
-            print("Total time: ", total_time, res)
-            break
+        # if (n_frame % 300) == 0:
+        #     hour += 1
+        #     get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
+        #         duration, video_fps, frame_count, df_info_frame, start, hour)
+        
+        actual_time = timer()
+        if (actual_time - last_report) >= 60:
+            last_report = timer()
+            hour += 1
+            get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, output_path, isOutput,
+                duration, video_fps, frame_count, df_info_frame, start, hour)
 
-    
     if monitor_gpu is not None:
         monitor_gpu.stop()
     monitor_cpu.stop()
@@ -287,5 +275,5 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
     # Delete the last frame because is empty
     total_frames = total_frames[:-1]
     
-    get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
+    get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, output_path, isOutput,
     duration, video_fps, frame_count, df_info_frame, start, hour)
