@@ -204,6 +204,8 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
         
         _, frame = vid.read()
         n_frame = n_frame + 1
+        if (not streaming) and (n_frame >= frame_count):
+            break
 
         if n_frame % num_frames_to_sample != 0:
             continue
@@ -260,12 +262,13 @@ def detect_video(video_path, output_path="", use_cuda=True, smapling_fps=3, stre
         #     get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, num_car, num_bike, num_bus, num_truck, output_path, isOutput,
         #         duration, video_fps, frame_count, df_info_frame, start, hour)
         
-        actual_time = timer()
-        if (actual_time - last_report) >= 60:
-            last_report = timer()
-            hour += 1
-            get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, output_path, isOutput,
-                duration, video_fps, frame_count, df_info_frame, start, hour)
+        if streaming:
+            actual_time = timer()
+            if (actual_time - last_report) >= 60:
+                last_report = timer()
+                hour += 1
+                get_output(total_frames, total_time_frames, cars_frame, bus_frame, truck_frame, bikes_frame, output_path, isOutput,
+                    duration, video_fps, frame_count, df_info_frame, start, hour)
 
     if monitor_gpu is not None:
         monitor_gpu.stop()
