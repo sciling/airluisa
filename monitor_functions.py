@@ -2,7 +2,7 @@
 """
 Test program with functions for monitoring CPU and RAM usage in Python with PsUtil.
 """
-__docformat__ = 'reStructuredText'
+__docformat__ = "reStructuredText"
 
 import os
 import psutil
@@ -11,19 +11,19 @@ import GPUtil as GPU
 
 def main_display():
     # Output current CPU usage as a percentage
-    print('CPU usage is {} %'.format(get_cpu_usage_pct()))
+    print("CPU usage is {} %".format(get_cpu_usage_pct()))
     # Output current CPU frequency in MHz.
-    print('CPU frequency is {} MHz'.format(get_cpu_frequency()))
+    print("CPU frequency is {} MHz".format(get_cpu_frequency()))
 
     # # Output current CPU temperature in degrees Celsius
     # print('CPU temperature is {} degC'.format(get_cpu_temp()))
 
     # Output current RAM usage in MB
-    print('RAM usage is {} MB'.format(int(get_ram_usage() / 1024 / 1024)))
+    print("RAM usage is {} MB".format(int(get_ram_usage() / 1024 / 1024)))
     # Output total RAM in MB
-    print('RAM total is {} MB'.format(int(get_ram_total() / 1024 / 1024)))
+    print("RAM total is {} MB".format(int(get_ram_total() / 1024 / 1024)))
     # Output current RAM usage as a percentage.
-    print('RAM usage is {} %'.format(get_ram_usage_pct()))
+    print("RAM usage is {} %".format(get_ram_usage_pct()))
 
     # # Output current Swap usage in MB
     # print('Swap usage is {} MB'.format(int(get_swap_usage() / 1024 / 1024)))
@@ -31,6 +31,7 @@ def main_display():
     # print('Swap total is {} MB'.format(int(get_swap_total() / 1024 / 1024)))
     # # Output current Swap usage as a percentage.
     # print('Swap usage is {} %'.format(get_swap_usage_pct()))
+
 
 def get_results():
     # Output current CPU usage as a percentage
@@ -76,8 +77,8 @@ def get_cpu_temp():
     result = 0.0
     # The first line in this file holds the CPU temperature as an integer times 1000.
     # Read the first line and remove the newline character at the end of the string.
-    if os.path.isfile('/sys/class/thermal/thermal_zone0/temp'):
-        with open('/sys/class/thermal/thermal_zone0/temp') as f:
+    if os.path.isfile("/sys/class/thermal/thermal_zone0/temp"):
+        with open("/sys/class/thermal/thermal_zone0/temp") as f:
             line = f.readline().strip()
         # Test if the string is an integer as expected.
         if line.isdigit():
