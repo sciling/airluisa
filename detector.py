@@ -48,7 +48,8 @@ class Detector:
         img, ratio = preproc(raw_img, self.test_size, COCO_MEAN, COCO_STD)
         info["raw_img"] = raw_img
         info["img"] = img
-
+       
+        
         img = torch.from_numpy(img).unsqueeze(0)
         img = img.to(self.device)
 
@@ -58,10 +59,25 @@ class Detector:
                 if self.device == torch.device("cuda:0")
                 else self.model(img)
             )
+            #outputs = postprocess(
+            #    outputs, self.exp.num_classes, self.exp.test_conf, self.exp.nmsthre
+            #)  # [0].cpu().numpy() # TODO:用户可更改
+            outputs = postprocess(
+                outputs, self.exp.num_classes, 0.25, self.exp.nmsthre # CAMBIO CONFG THRESHOLD
+            ) 
+        '''
+        ##Codigo de tools/demo.py--------------
+        img = torch.from_numpy(img).unsqueeze(0)
+        if self.device == torch.device("cuda:0"): #"gpu"
+            img = img.cuda()
+
+        with torch.no_grad():
+            outputs = self.model(img)
             outputs = postprocess(
                 outputs, self.exp.num_classes, self.exp.test_conf, self.exp.nmsthre
-            )  # [0].cpu().numpy() # TODO:用户可更改
-
+            )
+        #---------------------------------
+        '''
         if outputs[0] is None:
             info["boxes"], info["scores"], info["class_ids"], info["box_nums"] = (
                 None,
@@ -90,7 +106,7 @@ class Detector:
 
 
 if __name__ == "__main__":
-    detector = Detector()
+    detector = Detector(model="yolox-s", ckpt="weights/best_ckpt.pth.tar", use_cude=False)
     img = cv2.imread("dog.jpg")
     img_, out = detector.detect(img)
     print(out)

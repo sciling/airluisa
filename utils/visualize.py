@@ -47,7 +47,53 @@ def vis_detect_track(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
 
         return img
 
+def vis_detect(img, boxes_info, scores, cls_ids, conf=0.5, class_names=None):
 
+    if len(boxes_info) > len(cls_ids):
+        return img
+
+    else:
+        #print("boxesinfo:", boxes_info)
+        #print("------------------")
+        #print("Boxes length: ", len(boxes_info))
+        for i in range(len(boxes_info)):
+            box = boxes_info[i]
+            cls_id = int(cls_ids[i])
+            score = scores[i]
+            if score < conf:
+                continue
+            x0 = int(box[0])
+            y0 = int(box[1])
+            x1 = int(box[2])
+            y1 = int(box[3])
+
+            #id = box[4]
+            #text_id = "%d" % (id)
+            text_id = "DISABLED"
+
+            color = (_COLORS[cls_id] * 250).astype(np.uint8).tolist()
+            text = "{}:{:.1f}%   ID:{}".format(
+                class_names[cls_id], score * 100, text_id
+            )
+            txt_color = (0, 0, 0) if np.mean(_COLORS[cls_id]) > 0.5 else (255, 255, 255)
+            font = cv2.FONT_HERSHEY_DUPLEX
+
+            txt_size = cv2.getTextSize(text, font, 0.4, 1)[0]
+            cv2.rectangle(img, (x0, y0), (x1, y1), color, 2)
+
+            txt_bk_color = (_COLORS[cls_id] * 255 * 0.7).astype(np.uint8).tolist()
+            cv2.rectangle(
+                img,
+                (x0, y0 + 1),
+                (x0 + txt_size[0] + 1, y0 + int(1.5 * txt_size[1])),
+                txt_bk_color,
+                -1,
+            )
+            cv2.putText(
+                img, text, (x0, y0 + txt_size[1]), font, 0.4, txt_color, thickness=1
+            )
+
+        return img
 def vis_df(img, boxes, scores, cls_ids, n_frame, conf=0.5, class_names=None):
 
     df = pd.DataFrame()
@@ -104,6 +150,7 @@ def vis(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
         y0 = int(box[1])
         x1 = int(box[2])
         y1 = int(box[3])
+
 
         color = (_COLORS[cls_id] * 255).astype(np.uint8).tolist()
         text = "{}:{:.1f}%".format(class_names[cls_id], score * 100)

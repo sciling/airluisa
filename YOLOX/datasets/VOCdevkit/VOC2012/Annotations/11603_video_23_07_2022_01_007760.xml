@@ -1,0 +1,26 @@
+<annotation>
+	<folder>11603_video_23_07_2022_01_00</folder>
+	<filename>11603_video_23_07_2022_01_007760.jpg</filename>
+	<path>/home/jotade/Desktop/Sciling/camdown/out/out_1h_Etiquetado/1h_NOCHE/23_07_2022_01_00_Videos/Frames_1H/11603_video_23_07_2022_01_00/11603_video_23_07_2022_01_007760.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>640</width>
+		<height>640</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>bus</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>178</xmin>
+			<ymin>230</ymin>
+			<xmax>246</xmax>
+			<ymax>284</ymax>
+		</bndbox>
+	</object>
+</annotation>

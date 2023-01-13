@@ -116,7 +116,8 @@ def count_df_vehicle_types(df, type, cars, bikes, buses, trucks):
     return cars, bikes, buses, trucks
 
 
-def count_vehicles_moving(df, output_path, treshold=100):
+def count_vehicles_moving(df, output_path, treshold=530):
+    #treshold=100, 430
 
     # To control the number of vehicles NOT parked
     num_car = 0
@@ -133,12 +134,16 @@ def count_vehicles_moving(df, output_path, treshold=100):
     moving_vehicles = []
     parked_vehicles = []
     for t in tracked_ids:
-        # print(len(df[df["id_track"] == t]))
+        
+        print("Veces que aparece id {}: {}".format(t, len(df[df["id_track"] == t])))
+        
         if len(df[df["id_track"] == t]) < treshold:
             moving_vehicles.append(t)
+            print("Clasificado ID: {} como vehic en movimiento".format(t))
         else:
             # print("Parked vehicles ID: ", t)
             parked_vehicles.append(t)
+            print("Clasificado ID: {} como vehic aparcado".format(t))
 
     new_df = df[df["id_track"].isin(moving_vehicles)]
 

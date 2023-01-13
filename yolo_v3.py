@@ -2,6 +2,7 @@ import datetime
 from timeit import default_timer as timer
 
 import cv2
+import numpy as np
 import imutils
 import pandas as pd
 import streamlink
@@ -112,6 +113,74 @@ def get_output(
     df_info_frame.to_csv("out/df_info_frame.csv", index=False)
     print("SAVED")
 
+# MÉTODO AUXILIAR CONVERTIR LOS FRAMES A 640x640
+def Reformat_Image(image):
+
+    from PIL import Image
+    #image = Image.open(ImageFilePath, 'r')
+    #image_size = image.size
+    image_size = image.shape
+    width = image_size[0]
+    height = image_size[1]
+
+    if(width != height):
+        #bigside = width if width > height else height
+        bigside = 640
+
+        background = Image.new('RGB', (bigside, bigside), (255, 255, 255))
+        offset = (int(round(((bigside - width) / 2), 0)), int(round(((bigside - height) / 2),0)))
+
+        background.paste(image, offset)
+        #background.save('out.png')
+        print("Image has been resized !")
+        return background
+
+    else:
+        print("Image is already a square, it has not been resized !")
+        return image
+
+
+def resizeAndPad(img, size, padColor=0):
+
+    h, w = img.shape[:2]
+    sh, sw = size
+
+    # interpolation method
+    if h > sh or w > sw: # shrinking image
+        interp = cv2.INTER_AREA
+    else: # stretching image
+        interp = cv2.INTER_CUBIC
+
+    # aspect ratio of image
+    aspect = w/h  # if on Python 2, you might need to cast as a float: float(w)/h
+
+    # compute scaling and pad sizing
+    if aspect > 1: # horizontal image
+        new_w = sw
+        new_h = np.round(new_w/aspect).astype(int)
+        pad_vert = (sh-new_h)/2
+        pad_top, pad_bot = np.floor(pad_vert).astype(int), np.ceil(pad_vert).astype(int)
+        pad_left, pad_right = 0, 0
+    elif aspect < 1: # vertical image
+        new_h = sh
+        new_w = np.round(new_h*aspect).astype(int)
+        pad_horz = (sw-new_w)/2
+        pad_left, pad_right = np.floor(pad_horz).astype(int), np.ceil(pad_horz).astype(int)
+        pad_top, pad_bot = 0, 0
+    else: # square image
+        new_h, new_w = sh, sw
+        pad_left, pad_right, pad_top, pad_bot = 0, 0, 0, 0
+
+    # set pad color
+    if (len(img.shape) == 3) and not isinstance(padColor, (list, tuple, np.ndarray)): # color image but only one color provided
+        padColor = [padColor]*3
+
+    # scale and pad
+    scaled_img = cv2.resize(img, (new_w, new_h), interpolation=interp)
+    scaled_img = cv2.copyMakeBorder(scaled_img, pad_top, pad_bot, pad_left, pad_right, borderType=cv2.BORDER_CONSTANT, value=padColor)
+
+    return scaled_img
+
 
 def detect_video(
     video_path, output_path="", use_cuda=True, smapling_fps=3, streaming=False
@@ -199,14 +268,22 @@ def detect_video(
     last_report = start
 
     monitor_gpu = None
-    if use_cuda:
-        monitor_gpu = Monitor(30, output_path)  # For GPU
-    monitor_cpu = Monitor_CPU(30, output_path)  # For CPU
+    #if use_cuda:
+        #monitor_gpu = Monitor(30, output_path)  # For GPU
+    #monitor_cpu = Monitor_CPU(30, output_path)  # For CPU
     while True:
         if (not streaming) and (not vid.isOpened()):
             break
 
         _, frame = vid.read()
+        #print("FRAME SHAPE: ", frame.shape)
+        try:
+            image = resizeAndPad(frame, (640,640), 0)
+            frame = image
+            #print("FRAME RESHAPED: ", frame.shape)
+        except Exception as e:
+            print("EXCEPTION CATCHED: ", e)
+        
         n_frame = n_frame + 1
         if (not streaming) and (n_frame >= frame_count):
             break
@@ -214,11 +291,16 @@ def detect_video(
         if n_frame % num_frames_to_sample != 0:
             continue
 
-        total_frames.append(name + "_" + str(n_frame))
-        frame = imutils.resize(frame, height=500)
-        image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
+        if frame is None:
+            print("Error in frame: ", n_frame)
+            continue
+        else:
+            total_frames.append(name + "_" + str(n_frame))
+        
+            print("Nº frame: ", n_frame)
+            image2, output, info, time_frame, df_per_frame = tracker.update(frame, n_frame)
 
-        print(n_frame)
+        
 
         if not is_vehicle_tracker_initialized:
             df_per_frame = init_vehicles_tracker(info, n_frame)
@@ -305,9 +387,9 @@ def detect_video(
             out.write(video_output_frames_arr[i])
         out.release()
 
-    if monitor_gpu is not None:
-        monitor_gpu.stop()
-    monitor_cpu.stop()
+    #if monitor_gpu is not None:
+    #    monitor_gpu.stop()
+    #monitor_cpu.stop()
 
     # Delete the last frame because is empty
     total_frames = total_frames[:-1]

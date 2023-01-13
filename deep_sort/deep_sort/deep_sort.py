@@ -29,21 +29,26 @@ class DeepSort(object):
         # generate detections
         features = self._get_features(bbox_xywh, ori_img)
         bbox_tlwh = self._xywh_to_tlwh(bbox_xywh)
-        detections = [Detection(bbox_tlwh[i], conf, features[i]) for i,conf in enumerate(confidences) if conf>self.min_confidence]
+
+        
+        detections = [Detection(bbox_tlwh[i], conf, features[i]) for i,conf in enumerate(confidences) if conf>0.25] #self.min_confidence]
         # print("llego aquí generate detections")
 
         # run on non-maximum supression
         boxes = np.array([d.tlwh for d in detections])
+        
         scores = np.array([d.confidence for d in detections])
+
+        
         indices = non_max_suppression(boxes, self.nms_max_overlap, scores)
         detections = [detections[i] for i in indices]
+
 
         # update tracker
         self.tracker.predict()
         # print("predict tracker")
         self.tracker.update(detections)
         # print("update detections")
-
         # output bbox identities
         outputs = []
         for track in self.tracker.tracks:

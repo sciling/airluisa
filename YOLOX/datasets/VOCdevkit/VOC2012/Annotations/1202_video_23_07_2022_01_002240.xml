@@ -1,0 +1,26 @@
+<annotation>
+	<folder>1202_video_23_07_2022_01_00</folder>
+	<filename>1202_video_23_07_2022_01_002240.jpg</filename>
+	<path>/home/jotade/Desktop/Sciling/camdown/out/out_1h_Etiquetado/1h_NOCHE/23_07_2022_01_00_Videos/Frames_1H/1202_video_23_07_2022_01_00/1202_video_23_07_2022_01_002240.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>640</width>
+		<height>640</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>car</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>274</xmin>
+			<ymin>235</ymin>
+			<xmax>303</xmax>
+			<ymax>257</ymax>
+		</bndbox>
+	</object>
+</annotation>
