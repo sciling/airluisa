@@ -5,12 +5,6 @@ from datetime import datetime
 import sys
 import argparse
 
-#/mnt/data/videos_maquinaLocal/procesado/*
-#Cameras names: 10206  10305  11505  11603  11705  1202  13702  2502  3604
-
-#video_14_12_2022_00_24 --> día, mes, año, hora, minuto
-#video_14_12_2022_00_24_id_tracks_type_0.json --> total_moving_vehicles
-
 def organize_data(directory):
     df = pd.DataFrame()
 
@@ -157,5 +151,7 @@ if __name__ == "__main__":
         list_dir = list(select_df['video_path'])
         count_vehicles_data(list_dir, FLAGS.path_json, FLAGS.date, FLAGS.date2, FLAGS.camera)
 
-
-    #python3 vehicles_stats.py --date '14/12/2022' --date2 '19/12/2022' --camera 3604
+    # Example + info:
+    # python3 vehicles_stats.py --date '14/12/2022' --date2 '19/12/2022' --camera 3604
+    # video_14_12_2022_00_24 --> día, mes, año, hora. minuto
+    # video_14_12_2022_00_24_id_tracks_type_0.json --> total_moving_vehicles
