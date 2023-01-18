@@ -106,7 +106,15 @@ class Detector:
 
 
 if __name__ == "__main__":
-    detector = Detector(model="yolox-s", ckpt="weights/best_ckpt.pth.tar", use_cude=False)
-    img = cv2.imread("dog.jpg")
-    img_, out = detector.detect(img)
-    print(out)
+    detector = Detector(model="yolox-s", ckpt="weights/yolox_s.pth.tar", use_cude=False)
+    img = cv2.imread("frames/frame1.png")
+    info = detector.detect(img)
+    # info["raw_img"],
+    print("boxes: ", info["boxes"])
+    print("scores: ", info["scores"])
+    print("classes: ", info["class_ids"])
+    cv2.imshow('aa', info['raw_img'])
+    cv2.waitKey(0) 
+  
+    #closing all open windows 
+    cv2.destroyAllWindows() 
